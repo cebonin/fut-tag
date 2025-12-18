@@ -1,76 +1,61 @@
 <!doctype html>
 <html lang="pt-BR">
-    <link rel="apple-touch-icon" href="./icons/icon-180.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> 
 <head>
-    
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Juega10 Timer</title>
+  <title>Juega10 HUD</title>
 
-  <!-- PWA: Manifest e cores -->
-  <link rel="manifest" href="./manifest.webmanifest" />
-  <meta name="theme-color" content="#0d1117" />
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#0b0f1a" />
 
-  <!-- iOS PWA (Safari) -->
+  <!-- iOS PWA -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <!-- Se você não tiver ícone agora, o iOS usa um print da página -->
-  <!-- <link rel="apple-touch-icon" href="./icons/192.png" /> -->
+  <meta name="apple-mobile-web-app-title" content="Juega10 HUD" />
+  <link rel="apple-touch-icon" href="./icons/icon-180.png" />
 
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <header class="app-header">
-    <h1>Juega10 Timer</h1>
-    <div class="clock" id="clock">00:00</div>
-    <div class="status" id="status">Pausado</div>
-  </header>
+  <main id="app">
+    <h1>Juega10 HUD</h1>
 
-  <main class="container">
-    <section class="controls">
-      <div class="row">
-        <button id="btnStartPause" class="btn primary">Iniciar</button>
-        <button id="btnReset" class="btn danger">Zerar</button>
+    <div class="timer">
+      <span id="clock">00:00</span>
+      <div class="controls">
+        <button id="startPause">Iniciar</button>
+        <button id="reset">Reset</button>
+        <button id="markHalf">Intervalo</button>
       </div>
+    </div>
 
-      <div class="row note-row">
-        <input id="noteInput" class="note" type="text" placeholder="Nota rápida (opcional)" />
-      </div>
-
-      <div class="row tags">
-        <!-- Tags simples para teste: ajuste em app.js se quiser -->
-        <button class="btn tag tag-green" data-tag="Recuperação">Recuperação</button>
-        <button class="btn tag tag-red" data-tag="Perda">Perda</button>
-        <button class="btn tag tag-blue" data-tag="Finalização">Finalização</button>
-      </div>
-
-      <div class="row">
-        <button id="btnUndo" class="btn">Desfazer último</button>
-        <button id="btnExportCSV" class="btn">Exportar CSV</button>
-      </div>
-    </section>
+    <div class="tags">
+      <button class="tag" data-tag="Recuperação">Recuperação</button>
+      <button class="tag" data-tag="Finalização">Finalização</button>
+      <button class="tag" data-tag="Bola parada">Bola parada</button>
+      <button class="tag tag-goal" data-tag="Gol">Gol ⭐</button>
+    </div>
 
     <section class="events">
       <h2>Eventos</h2>
-      <ul id="eventsList" class="events-list"></ul>
+      <ul id="eventsList"></ul>
     </section>
+
+    <div class="exports">
+      <button id="exportCsv">Exportar CSV</button>
+      <button id="exportJson">Exportar JSON</button>
+      <button id="clearEvents">Limpar eventos</button>
+    </div>
   </main>
 
-  <footer class="app-footer">
-    <small>Funciona offline após a primeira instalação. Para manter a tela ligada no iPhone, ajuste o Auto-Bloqueio.</small>
-  </footer>
-
   <script src="./app.js"></script>
-</body>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./service-worker.js')
+  <script>
+    if ('serviceWorker' in navigator) {
+      const swUrl = new URL('service-worker.js', location.href);
+      navigator.serviceWorker.register(swUrl, { scope: './' })
         .then(reg => console.log('SW registrado:', reg.scope))
         .catch(err => console.error('Falha ao registrar SW:', err));
-    });
-  }
-</script>
+    }
+  </script>
+</body>
 </html>

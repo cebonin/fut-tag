@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR">
+    <link rel="apple-touch-icon" href="./icons/icon-180.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> 
+<head>
+    
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Juega10 Timer</title>
+
+  <!-- PWA: Manifest e cores -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#0d1117" />
+
+  <!-- iOS PWA (Safari) -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <!-- Se você não tiver ícone agora, o iOS usa um print da página -->
+  <!-- <link rel="apple-touch-icon" href="./icons/192.png" /> -->
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Juega10 Timer</h1>
+    <div class="clock" id="clock">00:00</div>
+    <div class="status" id="status">Pausado</div>
+  </header>
+
+  <main class="container">
+    <section class="controls">
+      <div class="row">
+        <button id="btnStartPause" class="btn primary">Iniciar</button>
+        <button id="btnReset" class="btn danger">Zerar</button>
+      </div>
+
+      <div class="row note-row">
+        <input id="noteInput" class="note" type="text" placeholder="Nota rápida (opcional)" />
+      </div>
+
+      <div class="row tags">
+        <!-- Tags simples para teste: ajuste em app.js se quiser -->
+        <button class="btn tag tag-green" data-tag="Recuperação">Recuperação</button>
+        <button class="btn tag tag-red" data-tag="Perda">Perda</button>
+        <button class="btn tag tag-blue" data-tag="Finalização">Finalização</button>
+      </div>
+
+      <div class="row">
+        <button id="btnUndo" class="btn">Desfazer último</button>
+        <button id="btnExportCSV" class="btn">Exportar CSV</button>
+      </div>
+    </section>
+
+    <section class="events">
+      <h2>Eventos</h2>
+      <ul id="eventsList" class="events-list"></ul>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <small>Funciona offline após a primeira instalação. Para manter a tela ligada no iPhone, ajuste o Auto-Bloqueio.</small>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(reg => console.log('SW registrado:', reg.scope))
+        .catch(err => console.error('Falha ao registrar SW:', err));
+    });
+  }
+</script>
+</html>

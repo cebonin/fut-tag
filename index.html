@@ -3,58 +3,56 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Juega10 HUD</title>
+  <meta name="theme-color" content="#0B253A" />
+  <title>Juega10 HUD Timer</title>
 
-  <link rel="manifest" href="./manifest.json" />
-  <meta name="theme-color" content="#0b0f1a" />
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  <!-- iOS PWA -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Juega10 HUD" />
-  <link rel="apple-touch-icon" href="./icons/icon-180.png" />
-
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <main id="app">
-    <h1>Juega10 HUD</h1>
+  <header class="app-header">
+    <h1>HUD Timer</h1>
+  </header>
 
-    <div class="timer">
-      <span id="clock">00:00</span>
-      <div class="controls">
-        <button id="startPause">Iniciar</button>
-        <button id="reset">Reset</button>
-        <button id="markHalf">Intervalo</button>
+  <main class="app-main">
+    <section class="timer-section">
+      <div class="timer-display" id="timerDisplay">00:00</div>
+      <div class="timer-controls">
+        <button id="toggleBtn" class="btn primary">Pausar</button>
+        <button id="resetBtn" class="btn ghost">Zerar</button>
       </div>
-    </div>
-
-    <div class="tags">
-      <button class="tag" data-tag="Recuperação">Recuperação</button>
-      <button class="tag" data-tag="Finalização">Finalização</button>
-      <button class="tag" data-tag="Bola parada">Bola parada</button>
-      <button class="tag tag-goal" data-tag="Gol">Gol ⭐</button>
-    </div>
-
-    <section class="events">
-      <h2>Eventos</h2>
-      <ul id="eventsList"></ul>
     </section>
 
-    <div class="exports">
-      <button id="exportCsv">Exportar CSV</button>
-      <button id="exportJson">Exportar JSON</button>
-      <button id="clearEvents">Limpar eventos</button>
-    </div>
+    <section class="tags-section">
+      <div class="tags-grid" id="tagsGrid">
+        <!-- Os botões de tags são gerados dinamicamente pelo app.js -->
+      </div>
+    </section>
   </main>
 
-  <script src="./app.js"></script>
+  <footer class="app-footer">
+    <div class="export-actions">
+      <button id="exportCsvBtn" class="btn success">Exportar CSV</button>
+      <button id="exportXmlBtn" class="btn warning">Exportar XML</button>
+    </div>
+    <div class="meta">
+      <span id="statusMsg"></span>
+    </div>
+  </footer>
+
+  <script src="./app.js" defer></script>
   <script>
+    // SW: registra quando online/HTTPS (GitHub Pages já é HTTPS)
     if ('serviceWorker' in navigator) {
-      const swUrl = new URL('service-worker.js', location.href);
-      navigator.serviceWorker.register(swUrl, { scope: './' })
-        .then(reg => console.log('SW registrado:', reg.scope))
-        .catch(err => console.error('Falha ao registrar SW:', err));
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .catch(() => {});
+      });
     }
   </script>
 </body>

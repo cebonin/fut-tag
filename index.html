@@ -5,80 +5,104 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Juega10 HUD</title>
 
-  <!-- PWA -->
+  <meta name="theme-color" content="#0ea5e9" />
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0ea5e9">
 
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">Juega10 HUD</div>
-    <div class="clock-box">
-      <button id="btn-start" class="btn small">Iniciar</button>
-      <button id="btn-pause" class="btn small">Pausar</button>
-      <button id="btn-reset" class="btn small">Zerar</button>
-      <span id="match-clock" class="clock">00:00</span>
-    </div>
-  </header>
-
-  <main class="layout">
-    <!-- Coluna LEC -->
-    <section class="team-panel" data-team="LEC">
-      <h2 class="team-title lec">LEC</h2>
-
-      <div class="section">
-        <h3>Finalizações</h3>
-        <div class="field-grid lec" data-team="LEC" data-group="FINALIZACAO"></div>
+  <div class="app">
+    <header class="topbar">
+      <div class="left">
+        <div class="period-controls">
+          <button id="btn-inicio-1t" class="chip">Início 1°T</button>
+          <button id="btn-final-1t" class="chip">Final 1°T</button>
+          <button id="btn-inicio-2t" class="chip">Início 2°T</button>
+          <button id="btn-final-2t" class="chip">Final 2°T</button>
+        </div>
       </div>
-
-      <div class="section">
-        <h3>Entradas no Último Terço</h3>
-        <div class="field-grid lec" data-team="LEC" data-group="ENTRADA_TERCO"></div>
+      <div class="right">
+        <div class="timer">
+          <span id="current-period" class="period">1°T</span>
+          <span id="timer" class="time">00:00</span>
+        </div>
+        <div class="timer-actions">
+          <button id="btn-toggle" class="chip">Pausar</button>
+          <button id="btn-reset" class="chip danger">Zerar</button>
+        </div>
       </div>
+    </header>
 
-      <div class="section">
-        <h3>Ações rápidas</h3>
-        <div class="actions" id="actions-lec"></div>
-      </div>
-    </section>
+    <main class="board">
+      <section class="team-col">
+        <h2 class="team-title lec">LEC</h2>
 
-    <!-- Coluna ADV -->
-    <section class="team-panel" data-team="ADV">
-      <h2 class="team-title adv">ADV</h2>
+        <h3 class="section-title">Finalizações</h3>
+        <div class="zone-grid" data-team="LEC" data-type="finalizacao">
+          <button class="zone lec" data-zone="1">Z1 <span class="count">0</span></button>
+          <button class="zone lec" data-zone="2">Z2 <span class="count">0</span></button>
+          <button class="zone lec" data-zone="3">Z3 <span class="count">0</span></button>
+          <button class="zone lec" data-zone="4">Z4 <span class="count">0</span></button>
+          <button class="zone lec" data-zone="5">Z5 <span class="count">0</span></button>
+          <button class="zone lec" data-zone="6">Z6 <span class="count">0</span></button>
+        </div>
 
-      <div class="section">
-        <h3>Finalizações</h3>
-        <div class="field-grid adv" data-team="ADV" data-group="FINALIZACAO"></div>
-      </div>
+        <h3 class="section-title">Entradas no Último Terço</h3>
+        <div class="zone-grid" data-team="LEC" data-type="entrada">
+          <button class="zone lec" data-zone="1">Z1 <span class="count">0</span></button>
+          <button class="zone lec" data-zone="2">Z2 <span class="count">0</span></button>
+          <button class="zone lec" data-zone="3">Z3 <span class="count">0</span></button>
+          <button class="zone lec" data-zone="4">Z4 <span class="count">0</span></button>
+          <button class="zone lec" data-zone="5">Z5 <span class="count">0</span></button>
+          <button class="zone lec" data-zone="6">Z6 <span class="count">0</span></button>
+        </div>
 
-      <div class="section">
-        <h3>Entradas no Último Terço</h3>
-        <div class="field-grid adv" data-team="ADV" data-group="ENTRADA_TERCO"></div>
-      </div>
+        <div class="action-buttons" id="actions-lec"></div>
+      </section>
 
-      <div class="section">
-        <h3>Ações rápidas</h3>
-        <div class="actions" id="actions-adv"></div>
-      </div>
-    </section>
-  </main>
+      <section class="team-col">
+        <h2 class="team-title adv">ADV</h2>
 
-  <footer class="footer">
-    <button id="btn-export-csv" class="btn export">Exportar CSV</button>
-    <button id="btn-export-xml" class="btn export">Exportar XML</button>
-  </footer>
+        <h3 class="section-title">Finalizações</h3>
+        <div class="zone-grid" data-team="ADV" data-type="finalizacao">
+          <button class="zone adv" data-zone="1">Z1 <span class="count">0</span></button>
+          <button class="zone adv" data-zone="2">Z2 <span class="count">0</span></button>
+          <button class="zone adv" data-zone="3">Z3 <span class="count">0</span></button>
+          <button class="zone adv" data-zone="4">Z4 <span class="count">0</span></button>
+          <button class="zone adv" data-zone="5">Z5 <span class="count">0</span></button>
+          <button class="zone adv" data-zone="6">Z6 <span class="count">0</span></button>
+        </div>
+
+        <h3 class="section-title">Entradas no Último Terço</h3>
+        <div class="zone-grid" data-team="ADV" data-type="entrada">
+          <button class="zone adv" data-zone="1">Z1 <span class="count">0</span></button>
+          <button class="zone adv" data-zone="2">Z2 <span class="count">0</span></button>
+          <button class="zone adv" data-zone="3">Z3 <span class="count">0</span></button>
+          <button class="zone adv" data-zone="4">Z4 <span class="count">0</span></button>
+          <button class="zone adv" data-zone="5">Z5 <span class="count">0</span></button>
+          <button class="zone adv" data-zone="6">Z6 <span class="count">0</span></button>
+        </div>
+
+        <div class="action-buttons" id="actions-adv"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <button id="btn-export-csv" class="export">Exportar CSV</button>
+      <button id="btn-export-xml" class="export">Exportar XML</button>
+      <button id="btn-clear" class="danger">Limpar Dados</button>
+    </footer>
+  </div>
 
   <script src="./app.js" defer></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./service-worker.js')
-          .then(reg => console.log('SW registrado:', reg.scope))
-          .catch(err => console.error('Falha ao registrar SW:', err));
+          .catch(err => console.error('Falha SW:', err));
       });
     }
   </script>

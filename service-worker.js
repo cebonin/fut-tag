@@ -1,6 +1,5 @@
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4'; // <-- incremente quando mudar algo
 const CACHE_NAME = `hud-cache-${CACHE_VERSION}`;
-
 const URLS_TO_CACHE = [
   './',
   './index.html',
@@ -14,16 +13,17 @@ const URLS_TO_CACHE = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(URLS_TO_CACHE))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(URLS_TO_CACHE))
       .then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.map((key) => (key !== CACHE_NAME ? caches.delete(key) : Promise.resolve()))
+      )
     ).then(() => self.clients.claim())
   );
 });
@@ -41,7 +41,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
           return res;
         })
-        .catch(() => caches.match('./index.html'));
+        .catch(() => caches.match('./')); // fallback: index.html
     })
   );
 });

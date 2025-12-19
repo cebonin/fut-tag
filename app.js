@@ -1,10 +1,212 @@
-// ======= Configuração =======
-const TAGS = [
-  { key: 'recuperacao', label: 'Recuperação', colorClass: 'tag-1' },
-  { key: 'finalizacao', label: 'Finalização', colorClass: 'tag-2' },
-  { key: 'bola_parada', label: 'Bola parada', colorClass: 'tag-3' },
-  { key: 'gol', label: 'Gol ⭐', colorClass: 'tag-4' }
-];
+// ====== CONFIG ======
+const CONFIG = {
+  teams: [
+    {
+      id: "LEC",
+      label: "LEC",
+      color: "#10b981",
+      actions: [
+        { key: "LEC_GOL",     label: "Gol",        color: "#f43f5e" }, // vermelho
+        { key: "LEC_ESCANTEIO", label: "Escanteio", color: "#10b981" }, // verde
+        { key: "LEC_FALTA",   label: "Falta",      color: "#3b82f6" }  // azul
+      ]
+    },
+    {
+      id: "ADV",
+      label: "ADV",
+      color: "#ef4444",
+      actions: [
+        { key: "ADV_GOL",     label: "Gol",        color: "#f43f5e" },
+        { key: "ADV_ESCANTEIO", label: "Escanteio", color: "#10b981" },
+        { key: "ADV_FALTA",   label: "Falta",      color: "#3b82f6" }
+      ]
+    }
+  ],
+  regionGroups: [
+    { key: "FINALIZACAO",   label: "Finalizações" },
+    { key: "ENTRADA_TERCO", label: "Entradas no Último Terço" }
+  ],
+  regions: ["R1","R2","R3","R4","R5","R6"],
+  clip: { preMs: 25000, postMs: 10000 }
+};
+
+// ====== STATE ======
+let counters = {};        // { "LEC_FINALIZACAO_R1": 3, ... }
+let eventRecords = [];    // [{ type, timestampISO, clipStartISO, clipEndISO }]
+let clockInterval = null;
+let clockStartEpoch = null;
+let clockPausedAccum = 0; // ms acumulados enquanto rodou
+const LS_KEYS = { counters: "hud_counters", events: "hud_events", clock: "hud_clock" };
+
+// ====== INIT ======
+document.addEventListener("DOMContentLoaded", () => {
+  // Renderizar telas
+  renderFieldGrids();
+  renderActionButtons();
+
+  // Carregar estado
+  loadState();
+
+  // Wire buttons
+  document.getElementById("btn-export-csv").addEventListener("click", exportCSV);
+  document.getElementById("btn-export-xml").addEventListener("click", exportXML);
+
+  // Relógio
+  document.getElementById("btn-start").addEventListener("click", startClock);
+  document.getElementById("btn-pause").addEventListener("click", pauseClock);
+  document.getElementById("btn-reset").addEventListener("click", resetClock);
+  updateClockUI(0);
+});
+
+// ====== RENDER ======
+function renderFieldGrids(){
+  document.querySelectorAll(".field-grid").forEach(grid => {
+    const teamId = grid.getAttribute("data-team");
+    const groupKey = grid.getAttribute("data-group");
+    grid.innerHTML = ""; // reset
+
+    CONFIG.regions.forEach(region => {
+      const key = `${teamId}_${groupKey}_${region}`;
+      const btn = document.createElement("button");
+      btn.className = "field-cell";
+      btn.setAttribute("data-key", key);
+      btn.innerHTML = `<span>${region}</span> <span class="badge" id="count-${key}">0</span>`;
+      btn.addEventListener("click", () => recordEvent(key));
+      grid.appendChild(btn);
+      if(!(key in counters)) counters[key] = 0;
+    });
+  });
+}
+
+function renderActionButtons(){
+  const lecBox = document.getElementById("actions-lec");
+  const advBox = document.getElementById("actions-adv");
+  lecBox.innerHTML = ""; advBox.innerHTML = "";
+
+  CONFIG.teams.forEach(team => {
+    const box = team.id === "LEC" ? lecBox : advBox;
+    team.actions.forEach(action => {
+      if(!(action.key in counters)) counters[action.key] = 0;
+      const btn = document.createElement("button");
+      btn.className = "action-btn";
+      btn.style.background = action.color;
+      btn.setAttribute("data-key", action.key);
+      btn.innerHTML = `<span>${action.label}</span> <span class="count" id="count-${action.key}">${counters[action.key]}</span>`;
+      btn.addEventListener("click", () => recordEvent(action.key));
+      box.appendChild(btn);
+    });
+  });
+}
+
+// ====== RECORD / COUNTERS ======
+function recordEvent(eventKey){
+  // 1) contador
+  counters[eventKey] = (counters[eventKey] || 0) + 1;
+  const badge = document.getElementById(`count-${eventKey}`);
+  if (badge) badge.textContent = counters[eventKey];
+
+  // 2) timestamps (-25s / +10s)
+  const now = Date.now();
+  const clipStart = new Date(now - CONFIG.clip.preMs);
+  const clipEnd   = new Date(now + CONFIG.clip.postMs);
+
+  eventRecords.push({
+    type: eventKey,
+    timestampISO: new Date(now).toISOString(),
+    clipStartISO: clipStart.toISOString(),
+    clipEndISO: clipEnd.toISOString()
+  });
+
+  persistState();
+}
+
+// ====== STORAGE ======
+function persistState(){
+  try {
+    localStorage.setItem(LS_KEYS.counters, JSON.stringify(counters));
+    localStorage.setItem(LS_KEYS.events, JSON.stringify(eventRecords));
+  } catch(e) { console.warn("Falha ao salvar estado:", e); }
+}
+
+function loadState(){
+  try {
+    const c = localStorage.getItem(LS_KEYS.counters);
+    const e = localStorage.getItem(LS_KEYS.events);
+    if (c) counters = JSON.parse(c);
+    if (e) eventRecords = JSON.parse(e);
+  } catch(_) {}
+
+  // Atualiza UI de contadores
+  Object.keys(counters).forEach(k => {
+    const el = document.getElementById(`count-${k}`);
+    if (el) el.textContent = counters[k];
+  });
+}
+
+// ====== CLOCK ======
+function startClock(){
+  if (clockInterval) return; // já rodando
+  if (!clockStartEpoch) clockStartEpoch = Date.now() - clockPausedAccum;
+  clockInterval = setInterval(() => {
+    const elapsed = Date.now() - clockStartEpoch;
+    updateClockUI(elapsed);
+  }, 200);
+}
+
+function pauseClock(){
+  if (!clockInterval) return;
+  clearInterval(clockInterval); clockInterval = null;
+  clockPausedAccum = Date.now() - clockStartEpoch;
+}
+
+function resetClock(){
+  clearInterval(clockInterval); clockInterval = null;
+  clockStartEpoch = null; clockPausedAccum = 0;
+  updateClockUI(0);
+}
+
+function updateClockUI(ms){
+  const el = document.getElementById("match-clock");
+  const totalSec = Math.floor(ms/1000);
+  const mm = String(Math.floor(totalSec/60)).padStart(2,'0');
+  const ss = String(totalSec%60).padStart(2,'0');
+  el.textContent = `${mm}:${ss}`;
+}
+
+// ====== EXPORTS ======
+function exportCSV(){
+  // Cabeçalho: Evento,Contagem
+  const keys = Object.keys(counters).sort();
+  let csv = "Evento,Contagem\n";
+  keys.forEach(k => { csv += `${k},${counters[k]}\n`; });
+  const now = new Date();
+  downloadFile(csv, `juega10_contadores_${fmtStamp(now)}.csv`, "text/csv");
+}
+
+function exportXML(){
+  // <Events><Event type="" timestamp="" clipStart="" clipEnd="" /></Events>
+  const now = new Date();
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<Events>\n';
+  eventRecords.forEach(ev => {
+    xml += `  <Event type="${ev.type}" timestamp="${ev.timestampISO}" clipStart="${ev.clipStartISO}" clipEnd="${ev.clipEndISO}" />\n`;
+  });
+  xml += '</Events>';
+  downloadFile(xml, `juega10_eventos_${fmtStamp(now)}.xml`, "application/xml");
+}
+
+function fmtStamp(d){
+  // yyyy-mm-dd_hh-mm-ss
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+}
+
+function downloadFile(content, filename, type){
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+  a.remove(); URL.revokeObjectURL(url);
+}
 
 // ======= Estado =======
 let startTime = null;

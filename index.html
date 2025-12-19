@@ -15,26 +15,20 @@
 </head>
 <body>
   <div class="app">
-    <header class="topbar">
-      <div class="left">
-        <div class="period-controls">
-          <button id="btn-inicio-1t" class="chip">Início 1°T</button>
-          <button id="btn-final-1t" class="chip">Final 1°T</button>
-          <button id="btn-inicio-2t" class="chip">Início 2°T</button>
-          <button id="btn-final-2t" class="chip">Final 2°T</button>
-        </div>
-      </div>
-      <div class="right">
-        <div class="timer">
-          <span id="current-period" class="period">1°T</span>
-          <span id="timer" class="time">00:00</span>
-        </div>
-        <div class="timer-actions">
-          <button id="btn-toggle" class="chip">Pausar</button>
-          <button id="btn-reset" class="chip danger">Zerar</button>
-        </div>
-      </div>
-    </header>
+    <header class="header">
+  <div class="period-controls">
+    <button class="btn btn-small" id="btnStartHT1">INÍCIO 1°T</button>
+    <button class="btn btn-small" id="btnEndHT1">FINAL 1°T</button>
+    <button class="btn btn-small" id="btnStartHT2">INÍCIO 2°T</button>
+    <button class="btn btn-small" id="btnEndHT2">FINAL 2°T</button>
+  </div>
+
+  <div class="timer-area">
+    <div class="period-label" id="periodLabel">1°T</div>
+    <div class="timer-display" id="timerDisplay">00:00</div>
+    <button class="btn btn-timer" id="btnTimer">INICIAR CRONÔMETRO</button>
+  </div>
+</header>
 
     <main class="board">
       <section class="team-col">

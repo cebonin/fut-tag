@@ -3,138 +3,115 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>HUD Timer PWA</title>
-  <meta name="theme-color" content="#0d1117" />
-  <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" href="./icons/icon-180.png">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="stylesheet" href="./styles.css">
+  <meta name="theme-color" content="#0f0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="./icons/icon-180.png" />
+  <link rel="manifest" href="./manifest.json" />
+  <title>Juega10 – Tagueamento Simplificado</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script defer src="./app.js"></script>
 </head>
 <body>
-  <div class="app-shell">
-    <!-- Barra superior: timer e controles -->
+  <div class="app">
     <header class="topbar">
-      <div class="timer-block">
-        <div id="timerDisplay" class="timer">00:00</div>
-        <div class="timer-controls">
-          <button id="startPauseBtn" class="btn btn-primary">Iniciar</button>
-          <button id="resetBtn" class="btn btn-ghost">Zerar</button>
-        </div>
+      <div class="timer">
+        <span id="period">Jogo</span>
+        <span id="clock">00:00</span>
       </div>
-      <div class="scoreboard">
-        <div class="team-score">
-          <div class="team-name lec">LEC</div>
-          <div id="lecScore" class="score">0</div>
-        </div>
-        <div class="score-sep">x</div>
-        <div class="team-score">
-          <div class="team-name adv">ADV</div>
-          <div id="advScore" class="score">0</div>
-        </div>
+      <div class="time-controls">
+        <button id="btnToggleTimer" class="btn action primary">Iniciar</button>
+        <button id="btnResetTimer" class="btn action danger">Zerar</button>
       </div>
     </header>
 
-    <!-- Área principal: duas colunas fixas (LEC esquerda, ADV direita) -->
-    <main class="grid-two-cols">
+    <main class="grid-2">
       <!-- Coluna LEC -->
-      <section class="team-col left" data-team="LEC">
-        <h2 class="team-header lec">LEC</h2>
+      <section class="team-col">
+        <h2 class="team-title lec">LEC</h2>
 
-        <div class="section">
-          <h3>Finalizações</h3>
-          <div class="pitch-third">
-            <div class="zones-grid">
-              <button class="zone-btn" data-team="LEC" data-section="finalizacao" data-zone="Z1"><span class="label">Z1</span><span class="badge" data-counter="LEC-finalizacao-Z1">0</span></button>
-              <button class="zone-btn" data-team="LEC" data-section="finalizacao" data-zone="Z2"><span class="label">Z2</span><span class="badge" data-counter="LEC-finalizacao-Z2">0</span></button>
-              <button class="zone-btn" data-team="LEC" data-section="finalizacao" data-zone="Z3"><span class="label">Z3</span><span class="badge" data-counter="LEC-finalizacao-Z3">0</span></button>
-              <button class="zone-btn" data-team="LEC" data-section="finalizacao" data-zone="Z4"><span class="label">Z4</span><span class="badge" data-counter="LEC-finalizacao-Z4">0</span></button>
-              <button class="zone-btn" data-team="LEC" data-section="finalizacao" data-zone="Z5"><span class="label">Z5</span><span class="badge" data-counter="LEC-finalizacao-Z5">0</span></button>
-              <button class="zone-btn" data-team="LEC" data-section="finalizacao" data-zone="Z6"><span class="label">Z6</span><span class="badge" data-counter="LEC-finalizacao-Z6">0</span></button>
-            </div>
-          </div>
+        <div class="block">
+          <h3>Finalização</h3>
+          <button class="btn big fin lec"
+                  data-code="FIN_LEC"
+                  data-team="LEC">
+            Finalização LEC
+            <span class="badge" id="count_FIN_LEC">0</span>
+          </button>
         </div>
 
-        <div class="section">
-          <h3>Entradas no último terço</h3>
-          <div class="pitch-third">
-            <div class="zones-grid">
-              <button class="zone-btn" data-team="LEC" data-section="entrada" data-zone="Z1"><span class="label">Z1</span><span class="badge" data-counter="LEC-entrada-Z1">0</span></button>
-              <button class="zone-btn" data-team="LEC" data-section="entrada" data-zone="Z2"><span class="label">Z2</span><span class="badge" data-counter="LEC-entrada-Z2">0</span></button>
-              <button class="zone-btn" data-team="LEC" data-section="entrada" data-zone="Z3"><span class="label">Z3</span><span class="badge" data-counter="LEC-entrada-Z3">0</span></button>
-              <button class="zone-btn" data-team="LEC" data-section="entrada" data-zone="Z4"><span class="label">Z4</span><span class="badge" data-counter="LEC-entrada-Z4">0</span></button>
-              <button class="zone-btn" data-team="LEC" data-section="entrada" data-zone="Z5"><span class="label">Z5</span><span class="badge" data-counter="LEC-entrada-Z5">0</span></button>
-              <button class="zone-btn" data-team="LEC" data-section="entrada" data-zone="Z6"><span class="label">Z6</span><span class="badge" data-counter="LEC-entrada-Z6">0</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="section">
-          <h3>Ações rápidas</h3>
-          <div class="quick-grid">
-            <button class="quick-btn q1" data-team="LEC" data-section="acao" data-action="GOL"><span>GOL</span><span class="badge" data-counter="LEC-acao-GOL">0</span></button>
-            <button class="quick-btn q2" data-team="LEC" data-section="acao" data-action="ESC OF"><span>ESC OF</span><span class="badge" data-counter="LEC-acao-ESC OF">0</span></button>
-            <button class="quick-btn q3" data-team="LEC" data-section="acao" data-action="FL OF"><span>FL OF</span><span class="badge" data-counter="LEC-acao-FL OF">0</span></button>
+        <div class="block">
+          <h3>Entradas no Último Terço</h3>
+          <div class="grid-3">
+            <button class="btn huge ent lateral"
+                    data-code="ENT_LAT_LEC"
+                    data-team="LEC">
+              Lateral
+              <span class="badge" id="count_ENT_LAT_LEC">0</span>
+            </button>
+            <button class="btn huge ent central"
+                    data-code="ENT_CEN_LEC"
+                    data-team="LEC">
+              Central
+              <span class="badge" id="count_ENT_CEN_LEC">0</span>
+            </button>
+            <button class="btn huge ent profundidade"
+                    data-code="ENT_PROF_LEC"
+                    data-team="LEC">
+              Profundidade
+              <span class="badge" id="count_ENT_PROF_LEC">0</span>
+            </button>
           </div>
         </div>
       </section>
 
       <!-- Coluna ADV -->
-      <section class="team-col right" data-team="ADV">
-        <h2 class="team-header adv">ADV</h2>
+      <section class="team-col">
+        <h2 class="team-title adv">ADV</h2>
 
-        <div class="section">
-          <h3>Finalizações</h3>
-          <div class="pitch-third">
-            <div class="zones-grid">
-              <button class="zone-btn" data-team="ADV" data-section="finalizacao" data-zone="Z1"><span class="label">Z1</span><span class="badge" data-counter="ADV-finalizacao-Z1">0</span></button>
-              <button class="zone-btn" data-team="ADV" data-section="finalizacao" data-zone="Z2"><span class="label">Z2</span><span class="badge" data-counter="ADV-finalizacao-Z2">0</span></button>
-              <button class="zone-btn" data-team="ADV" data-section="finalizacao" data-zone="Z3"><span class="label">Z3</span><span class="badge" data-counter="ADV-finalizacao-Z3">0</span></button>
-              <button class="zone-btn" data-team="ADV" data-section="finalizacao" data-zone="Z4"><span class="label">Z4</span><span class="badge" data-counter="ADV-finalizacao-Z4">0</span></button>
-              <button class="zone-btn" data-team="ADV" data-section="finalizacao" data-zone="Z5"><span class="label">Z5</span><span class="badge" data-counter="ADV-finalizacao-Z5">0</span></button>
-              <button class="zone-btn" data-team="ADV" data-section="finalizacao" data-zone="Z6"><span class="label">Z6</span><span class="badge" data-counter="ADV-finalizacao-Z6">0</span></button>
-            </div>
-          </div>
+        <div class="block">
+          <h3>Finalização</h3>
+          <button class="btn big fin adv"
+                  data-code="FIN_ADV"
+                  data-team="ADV">
+            Finalização ADV
+            <span class="badge" id="count_FIN_ADV">0</span>
+          </button>
         </div>
 
-        <div class="section">
-          <h3>Entradas no último terço</h3>
-          <div class="pitch-third">
-            <div class="zones-grid">
-              <button class="zone-btn" data-team="ADV" data-section="entrada" data-zone="Z1"><span class="label">Z1</span><span class="badge" data-counter="ADV-entrada-Z1">0</span></button>
-              <button class="zone-btn" data-team="ADV" data-section="entrada" data-zone="Z2"><span class="label">Z2</span><span class="badge" data-counter="ADV-entrada-Z2">0</span></button>
-              <button class="zone-btn" data-team="ADV" data-section="entrada" data-zone="Z3"><span class="label">Z3</span><span class="badge" data-counter="ADV-entrada-Z3">0</span></button>
-              <button class="zone-btn" data-team="ADV" data-section="entrada" data-zone="Z4"><span class="label">Z4</span><span class="badge" data-counter="ADV-entrada-Z4">0</span></button>
-              <button class="zone-btn" data-team="ADV" data-section="entrada" data-zone="Z5"><span class="label">Z5</span><span class="badge" data-counter="ADV-entrada-Z5">0</span></button>
-              <button class="zone-btn" data-team="ADV" data-section="entrada" data-zone="Z6"><span class="label">Z6</span><span class="badge" data-counter="ADV-entrada-Z6">0</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="section">
-          <h3>Ações rápidas</h3>
-          <div class="quick-grid">
-            <button class="quick-btn q1" data-team="ADV" data-section="acao" data-action="GOL"><span>GOL</span><span class="badge" data-counter="ADV-acao-GOL">0</span></button>
-            <button class="quick-btn q2" data-team="ADV" data-section="acao" data-action="ESC DEF"><span>ESC DEF</span><span class="badge" data-counter="ADV-acao-ESC DEF">0</span></button>
-            <button class="quick-btn q3" data-team="ADV" data-section="acao" data-action="FL DEF"><span>FL DEF</span><span class="badge" data-counter="ADV-acao-FL DEF">0</span></button>
+        <div class="block">
+          <h3>Entradas no Último Terço</h3>
+          <div class="grid-3">
+            <button class="btn huge ent lateral"
+                    data-code="ENT_LAT_ADV"
+                    data-team="ADV">
+              Lateral
+              <span class="badge" id="count_ENT_LAT_ADV">0</span>
+            </button>
+            <button class="btn huge ent central"
+                    data-code="ENT_CEN_ADV"
+                    data-team="ADV">
+              Central
+              <span class="badge" id="count_ENT_CEN_ADV">0</span>
+            </button>
+            <button class="btn huge ent profundidade"
+                    data-code="ENT_PROF_ADV"
+                    data-team="ADV">
+              Profundidade
+              <span class="badge" id="count_ENT_PROF_ADV">0</span>
+            </button>
           </div>
         </div>
       </section>
     </main>
 
-    <footer class="export-bar">
-      <button id="exportCsvBtn" class="btn btn-success">Exportar CSV</button>
-      <button id="exportXmlBtn" class="btn btn-success">Exportar XML</button>
+    <footer class="footer">
+      <div class="export">
+        <button id="btnExportCSV" class="btn export">Exportar CSV</button>
+        <button id="btnExportXML" class="btn export">Exportar XML</button>
+      </div>
+      <div class="note">PWA offline • Toque nos botões para marcar eventos</div>
     </footer>
   </div>
-
-  <script src="./app.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js').catch(console.error);
-      });
-    }
-  </script>
 </body>
 </html>

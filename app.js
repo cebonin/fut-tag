@@ -1,116 +1,257 @@
-// Estado simples do cronômetro e períodos
-let timer = null;
-let startedAt = null;
-let elapsed = 0; // em ms do período corrente
-let currentHalf = 1; // 1 ou 2
-let running = false;
+// ===== CONFIGURACAO =====
+const CONFIG = {
+  teams: ["LEC", "ADV"],
+  quickActions: {
+    LEC: ["GOL", "ESC OF", "FL OF"],
+    ADV: ["GOL", "ESC DEF", "FL DEF"]
+  },
+  clip: { pre: 25, post: 10 } // segundos
+};
 
-const periodoEl = document.getElementById('periodo');
-const clockEl = document.getElementById('cronometro');
+// ===== ESTADO =====
+let isRunning = false;
+let timerInterval = null;
+let elapsedMs = 0;
 
-const inicio1tBtn = document.getElementById('inicio1t');
-const final1tBtn = document.getElementById('final1t');
-const inicio2tBtn = document.getElementById('inicio2t');
-const final2tBtn = document.getElementById('final2t');
+const state = {
+  score: { LEC: 0, ADV: 0 },
+  counters: {
+    LEC: {
+      finalizacao: { Z1:0,Z2:0,Z3:0,Z4:0,Z5:0,Z6:0 },
+      entrada:      { Z1:0,Z2:0,Z3:0,Z4:0,Z5:0,Z6:0 },
+      acao:         {}
+    },
+    ADV: {
+      finalizacao: { Z1:0,Z2:0,Z3:0,Z4:0,Z5:0,Z6:0 },
+      entrada:      { Z1:0,Z2:0,Z3:0,Z4:0,Z5:0,Z6:0 },
+      acao:         {}
+    }
+  },
+  events: [] // {team, section, label, zone, timeSec, clipStart, clipEnd, ts}
+};
 
-const placarLecEl = document.getElementById('placarLec');
-const placarAdvEl = document.getElementById('placarAdv');
+// Inicializar contadores de ação conforme CONFIG
+CONFIG.teams.forEach(team=>{
+  state.counters[team].acao = {};
+  CONFIG.quickActions[team].forEach(a => state.counters[team].acao[a] = 0);
+});
 
-const golLecBtn = document.getElementById('golLec');
-const golAdvBtn = document.getElementById('golAdv');
-
-const exportCsvBtn = document.getElementById('exportCsv');
-const exportXmlBtn = document.getElementById('exportXml');
-
-// Util
-function pad2(n) { return n.toString().padStart(2, '0'); }
-function formatMMSS(ms) {
-  const totalSec = Math.floor(ms / 1000);
-  const mm = Math.floor(totalSec / 60);
-  const ss = totalSec % 60;
-  return `${pad2(mm)}:${pad2(ss)}`;
+// ===== HELPERS =====
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+function pad(n){return String(n).padStart(2,'0')}
+function formatMMSS(ms){
+  const s = Math.floor(ms/1000);
+  const m = Math.floor(s/60);
+  return `${pad(m)}:${pad(s%60)}`;
 }
-function updatePeriodLabel() {
-  periodoEl.textContent = currentHalf === 1 ? '1ºT' : '2ºT';
-}
-function renderClock() {
-  clockEl.textContent = formatMMSS(elapsed);
+function nowSec(){ return Math.floor(elapsedMs/1000); }
+
+function safeClipStart(sec){ return Math.max(0, sec - CONFIG.clip.pre); }
+function clipEnd(sec){ return sec + CONFIG.clip.post; }
+
+function updateTimerUI(){
+  $('#timerDisplay').textContent = formatMMSS(elapsedMs);
 }
 
-// Timer
-function startTimer() {
-  if (running) return;
-  running = true;
-  startedAt = Date.now();
-  timer = setInterval(() => {
-    const now = Date.now();
-    elapsed += now - startedAt;
-    startedAt = now;
-    renderClock();
+function updateScoresUI(){
+  $('#lecScore').textContent = state.score.LEC;
+  $('#advScore').textContent = state.score.ADV;
+}
+
+function updateBadges(){
+  // Zones
+  CONFIG.teams.forEach(team=>{
+    ['finalizacao','entrada'].forEach(section=>{
+      ['Z1','Z2','Z3','Z4','Z5','Z6'].forEach(z=>{
+        const key = `${team}-${section}-${z}`;
+        const el = document.querySelector(`[data-counter="${key}"]`);
+        if (el) el.textContent = state.counters[team][section][z];
+      });
+    });
+    // Quick
+    Object.entries(state.counters[team].acao).forEach(([act, val])=>{
+      const key = `${team}-acao-${act}`;
+      const el = document.querySelector(`[data-counter="${key}"]`);
+      if (el) el.textContent = val;
+    });
+  });
+}
+
+function startTimer(){
+  if (isRunning) return;
+  isRunning = true;
+  $('#startPauseBtn').textContent = 'Pausar';
+  let last = performance.now();
+  timerInterval = setInterval(()=>{
+    const now = performance.now();
+    elapsedMs += (now - last);
+    last = now;
+    updateTimerUI();
   }, 250);
 }
-function stopTimer() {
-  if (!running) return;
-  running = false;
-  clearInterval(timer);
-  timer = null;
+function pauseTimer(){
+  if (!isRunning) return;
+  isRunning = false;
+  $('#startPauseBtn').textContent = 'Iniciar';
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+function resetTimerOnly(){
+  pauseTimer();
+  elapsedMs = 0;
+  updateTimerUI();
 }
 
-// Eventos dos botões de tempo
-inicio1tBtn.addEventListener('click', () => {
-  currentHalf = 1;
-  updatePeriodLabel();
-  elapsed = 0;
-  renderClock();
-  startTimer();
-});
-final1tBtn.addEventListener('click', () => {
-  if (currentHalf !== 1) return;
-  stopTimer();
-});
-
-inicio2tBtn.addEventListener('click', () => {
-  currentHalf = 2;
-  updatePeriodLabel();
-  elapsed = 0;
-  renderClock();
-  startTimer();
-});
-final2tBtn.addEventListener('click', () => {
-  if (currentHalf !== 2) return;
-  stopTimer();
-});
-
-// Ações rápidas (exemplo: atualizar placar)
-golLecBtn.addEventListener('click', () => {
-  const v = parseInt(placarLecEl.textContent || '0', 10) + 1;
-  placarLecEl.textContent = String(v);
-  pulse(golLecBtn);
-});
-golAdvBtn.addEventListener('click', () => {
-  const v = parseInt(placarAdvEl.textContent || '0', 10) + 1;
-  placarAdvEl.textContent = String(v);
-  pulse(golAdvBtn);
-});
-
-// Efeito rápido de feedback visual
-function pulse(el) {
-  el.animate(
-    [{ transform: 'scale(1)' }, { transform: 'scale(0.98)' }, { transform: 'scale(1)' }],
-    { duration: 120, easing: 'ease-out' }
-  );
+// Registro de evento (grid ou ação)
+function recordEvent({team, section, label=null, zone=null}){
+  const t = nowSec();
+  const evt = {
+    team, section, label, zone,
+    timeSec: t,
+    clipStart: safeClipStart(t),
+    clipEnd: clipEnd(t),
+    ts: new Date().toISOString()
+  };
+  state.events.push(evt);
 }
 
-// Exports (stubs; integre com seus dados reais)
-exportCsvBtn.addEventListener('click', () => {
-  // TODO: monte o CSV com seus eventos e faça download
-  alert('Exportar CSV: implemente sua coleta de eventos e geração do arquivo.');
-});
-exportXmlBtn.addEventListener('click', () => {
-  // TODO: monte o XML com seus eventos e faça download
-  alert('Exportar XML: implemente sua coleta de eventos e geração do arquivo.');
+// Incrementos
+function incZone(team, section, zone){
+  state.counters[team][section][zone]++;
+  recordEvent({team, section, zone});
+  updateBadges();
+}
+
+function incAction(team, action){
+  state.counters[team].acao[action]++;
+  recordEvent({team, section:'acao', label:action});
+
+  // GOL atualiza placar
+  if (action === 'GOL'){
+    state.score[team]++;
+    updateScoresUI();
+  }
+  updateBadges();
+}
+
+// ===== LISTENERS =====
+window.addEventListener('DOMContentLoaded', ()=>{
+  // Timer buttons
+  $('#startPauseBtn').addEventListener('click', ()=>{
+    isRunning ? pauseTimer() : startTimer();
+  });
+  $('#resetBtn').addEventListener('click', resetTimerOnly);
+
+  // Zones (delegação)
+  $$('.zones-grid').forEach(grid=>{
+    grid.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.zone-btn');
+      if (!btn) return;
+      const team = btn.dataset.team;
+      const section = btn.dataset.section; // finalizacao | entrada
+      const zone = btn.dataset.zone;       // Z1..Z6
+      incZone(team, section, zone);
+    });
+  });
+
+  // Quick actions
+  $$('.quick-grid').forEach(qg=>{
+    qg.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.quick-btn');
+      if (!btn) return;
+      const team = btn.dataset.team;
+      const action = btn.dataset.action;
+      incAction(team, action);
+    });
+  });
+
+  // Export buttons
+  $('#exportCsvBtn').addEventListener('click', exportCSV);
+  $('#exportXmlBtn').addEventListener('click', exportXML);
+
+  // UI inicial
+  updateTimerUI();
+  updateScoresUI();
+  updateBadges();
 });
 
-// Inicializa UI
-updatePeriodLabel();
-renderClock();
+// ===== EXPORTAÇÃO =====
+function exportCSV(){
+  // Formato: team,section,label_or_zone,count
+  // Agrupa contadores atuais
+  const rows = [['team','section','key','count']];
+
+  CONFIG.teams.forEach(team=>{
+    // finalizacoes/entradas por zona
+    ['finalizacao','entrada'].forEach(section=>{
+      ['Z1','Z2','Z3','Z4','Z5','Z6'].forEach(z=>{
+        rows.push([team, section, z, state.counters[team][section][z]]);
+      });
+    });
+    // ações rápidas
+    Object.entries(state.counters[team].acao).forEach(([act,val])=>{
+      rows.push([team, 'acao', act, val]);
+    });
+  });
+
+  const csv = rows.map(r => r.map(x=>{
+    const s = String(x);
+    return s.includes(',') ? `"${s.replace(/"/g,'""')}"` : s;
+  }).join(',')).join('\n');
+
+  downloadText(csv, `contadores_${dateStamp()}.csv`, 'text/csv');
+}
+
+function exportXML(){
+  // Eventos com janela [t-25, t+10]
+  const lines = [];
+  lines.push('<?xml version="1.0" encoding="UTF-8"?>');
+  lines.push('<gameStats>');
+  lines.push(`  <meta><exportedAt>${new Date().toISOString()}</exportedAt></meta>`);
+  lines.push(`  <score><LEC>${state.score.LEC}</LEC><ADV>${state.score.ADV}</ADV></score>`);
+  lines.push('  <events>');
+  state.events.forEach(evt=>{
+    const attrs = [
+      `team="${evt.team}"`,
+      `section="${evt.section}"`,
+      evt.label ? `label="${escapeXml(evt.label)}"` : null,
+      evt.zone ? `zone="${evt.zone}"` : null,
+      `timeSec="${evt.timeSec}"`,
+      `clipStart="${evt.clipStart}"`,
+      `clipEnd="${evt.clipEnd}"`,
+      `timestamp="${evt.ts}"`
+    ].filter(Boolean).join(' ');
+    lines.push(`    <event ${attrs} />`);
+  });
+  lines.push('  </events>');
+  lines.push('</gameStats>');
+
+  downloadText(lines.join('\n'), `eventos_${dateStamp()}.xml`, 'application/xml');
+}
+
+function escapeXml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+}
+
+function downloadText(text, filename, mime){
+  const blob = new Blob([text], {type:mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function dateStamp(){
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mi = String(d.getMinutes()).padStart(2,'0');
+  return `${yyyy}${mm}${dd}_${hh}${mi}`;
+}

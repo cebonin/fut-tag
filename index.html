@@ -1,85 +1,140 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+<!doctype html>
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>App de Partida – Layout 2x3</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>HUD Timer PWA</title>
+  <meta name="theme-color" content="#0d1117" />
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <header class="match-header">
-    <div class="period" id="periodo">1ºT</div>
-    <div class="clock" id="cronometro">00:00</div>
-  </header>
-
-  <main class="content">
-    <!-- 2x2: Botões de tempo (maiores) -->
-    <section class="section time-controls">
-      <h2 class="section-title">Controle de Tempo</h2>
-      <div class="time-grid">
-        <button class="btn btn--time" id="inicio1t" aria-label="Início do primeiro tempo">INÍCIO 1ºT</button>
-        <button class="btn btn--time" id="final1t" aria-label="Final do primeiro tempo">FINAL 1ºT</button>
-        <button class="btn btn--time" id="inicio2t" aria-label="Início do segundo tempo">INÍCIO 2ºT</button>
-        <button class="btn btn--time" id="final2t" aria-label="Final do segundo tempo">FINAL 2ºT</button>
-      </div>
-    </section>
-
-    <!-- Placar compacto -->
-    <section class="section scoreboard">
-      <div class="score">
-        <div class="team">
-          <span class="team-name">LEC</span>
-          <span class="team-score" id="placarLec">0</span>
-        </div>
-        <div class="vs">x</div>
-        <div class="team">
-          <span class="team-name">ADV</span>
-          <span class="team-score" id="placarAdv">0</span>
+  <div class="app-shell">
+    <!-- Barra superior: timer e controles -->
+    <header class="topbar">
+      <div class="timer-block">
+        <div id="timerDisplay" class="timer">00:00</div>
+        <div class="timer-controls">
+          <button id="startPauseBtn" class="btn btn-primary">Iniciar</button>
+          <button id="resetBtn" class="btn btn-ghost">Zerar</button>
         </div>
       </div>
-    </section>
-
-    <!-- Finalizações (área compacta, pronta para diagramas) -->
-    <section class="section shots">
-      <h2 class="section-title">Finalizações</h2>
-      <div class="panel-grid">
-        <div class="panel" id="finalizacoes-left" aria-label="Mapa de finalizações esquerda">Diagrama</div>
-        <div class="panel" id="finalizacoes-right" aria-label="Mapa de finalizações direita">Diagrama</div>
+      <div class="scoreboard">
+        <div class="team-score">
+          <div class="team-name lec">LEC</div>
+          <div id="lecScore" class="score">0</div>
+        </div>
+        <div class="score-sep">x</div>
+        <div class="team-score">
+          <div class="team-name adv">ADV</div>
+          <div id="advScore" class="score">0</div>
+        </div>
       </div>
-    </section>
+    </header>
 
-    <!-- Entradas no último terço (área compacta, pronta para diagramas) -->
-    <section class="section entries">
-      <h2 class="section-title">Entradas no Último Terço</h2>
-      <div class="panel-grid">
-        <div class="panel" id="entradas-left" aria-label="Mapa de entradas esquerda">Diagrama</div>
-        <div class="panel" id="entradas-right" aria-label="Mapa de entradas direita">Diagrama</div>
-      </div>
-    </section>
+    <!-- Área principal: duas colunas fixas (LEC esquerda, ADV direita) -->
+    <main class="grid-two-cols">
+      <!-- Coluna LEC -->
+      <section class="team-col left" data-team="LEC">
+        <h2 class="team-header lec">LEC</h2>
 
-    <!-- 2x3: Botões de ação PRINCIPAIS (grandes) -->
-    <section class="section actions">
-      <h2 class="section-title">Ações Rápidas</h2>
-      <div class="actions-grid">
-        <button class="btn btn--xl btn--goal" id="golLec" aria-label="Gol LEC">GOL LEC</button>
-        <button class="btn btn--xl btn--esc-of" id="escOf" aria-label="Escanteio Ofensivo">ESC OF</button>
-        <button class="btn btn--xl btn--fl-of" id="flOf" aria-label="Falta Ofensiva">FL OF</button>
+        <div class="section">
+          <h3>Finalizações</h3>
+          <div class="pitch-third">
+            <div class="zones-grid">
+              <button class="zone-btn" data-team="LEC" data-section="finalizacao" data-zone="Z1"><span class="label">Z1</span><span class="badge" data-counter="LEC-finalizacao-Z1">0</span></button>
+              <button class="zone-btn" data-team="LEC" data-section="finalizacao" data-zone="Z2"><span class="label">Z2</span><span class="badge" data-counter="LEC-finalizacao-Z2">0</span></button>
+              <button class="zone-btn" data-team="LEC" data-section="finalizacao" data-zone="Z3"><span class="label">Z3</span><span class="badge" data-counter="LEC-finalizacao-Z3">0</span></button>
+              <button class="zone-btn" data-team="LEC" data-section="finalizacao" data-zone="Z4"><span class="label">Z4</span><span class="badge" data-counter="LEC-finalizacao-Z4">0</span></button>
+              <button class="zone-btn" data-team="LEC" data-section="finalizacao" data-zone="Z5"><span class="label">Z5</span><span class="badge" data-counter="LEC-finalizacao-Z5">0</span></button>
+              <button class="zone-btn" data-team="LEC" data-section="finalizacao" data-zone="Z6"><span class="label">Z6</span><span class="badge" data-counter="LEC-finalizacao-Z6">0</span></button>
+            </div>
+          </div>
+        </div>
 
-        <button class="btn btn--xl btn--goal-opp" id="golAdv" aria-label="Gol adversário">GOL ADV</button>
-        <button class="btn btn--xl btn--esc-def" id="escDef" aria-label="Escanteio Defensivo">ESC DEF</button>
-        <button class="btn btn--xl btn--fl-def" id="flDef" aria-label="Falta Defensiva">FL DEF</button>
-      </div>
-    </section>
+        <div class="section">
+          <h3>Entradas no último terço</h3>
+          <div class="pitch-third">
+            <div class="zones-grid">
+              <button class="zone-btn" data-team="LEC" data-section="entrada" data-zone="Z1"><span class="label">Z1</span><span class="badge" data-counter="LEC-entrada-Z1">0</span></button>
+              <button class="zone-btn" data-team="LEC" data-section="entrada" data-zone="Z2"><span class="label">Z2</span><span class="badge" data-counter="LEC-entrada-Z2">0</span></button>
+              <button class="zone-btn" data-team="LEC" data-section="entrada" data-zone="Z3"><span class="label">Z3</span><span class="badge" data-counter="LEC-entrada-Z3">0</span></button>
+              <button class="zone-btn" data-team="LEC" data-section="entrada" data-zone="Z4"><span class="label">Z4</span><span class="badge" data-counter="LEC-entrada-Z4">0</span></button>
+              <button class="zone-btn" data-team="LEC" data-section="entrada" data-zone="Z5"><span class="label">Z5</span><span class="badge" data-counter="LEC-entrada-Z5">0</span></button>
+              <button class="zone-btn" data-team="LEC" data-section="entrada" data-zone="Z6"><span class="label">Z6</span><span class="badge" data-counter="LEC-entrada-Z6">0</span></button>
+            </div>
+          </div>
+        </div>
 
-    <!-- Exportações -->
-    <section class="section exports">
-      <div class="export-grid">
-        <button class="btn btn--export" id="exportCsv" aria-label="Exportar CSV">EXPORTAR CSV</button>
-        <button class="btn btn--export" id="exportXml" aria-label="Exportar XML">EXPORTAR XML</button>
-      </div>
-    </section>
-  </main>
+        <div class="section">
+          <h3>Ações rápidas</h3>
+          <div class="quick-grid">
+            <button class="quick-btn q1" data-team="LEC" data-section="acao" data-action="GOL"><span>GOL</span><span class="badge" data-counter="LEC-acao-GOL">0</span></button>
+            <button class="quick-btn q2" data-team="LEC" data-section="acao" data-action="ESC OF"><span>ESC OF</span><span class="badge" data-counter="LEC-acao-ESC OF">0</span></button>
+            <button class="quick-btn q3" data-team="LEC" data-section="acao" data-action="FL OF"><span>FL OF</span><span class="badge" data-counter="LEC-acao-FL OF">0</span></button>
+          </div>
+        </div>
+      </section>
 
-  <script src="script.js"></script>
+      <!-- Coluna ADV -->
+      <section class="team-col right" data-team="ADV">
+        <h2 class="team-header adv">ADV</h2>
+
+        <div class="section">
+          <h3>Finalizações</h3>
+          <div class="pitch-third">
+            <div class="zones-grid">
+              <button class="zone-btn" data-team="ADV" data-section="finalizacao" data-zone="Z1"><span class="label">Z1</span><span class="badge" data-counter="ADV-finalizacao-Z1">0</span></button>
+              <button class="zone-btn" data-team="ADV" data-section="finalizacao" data-zone="Z2"><span class="label">Z2</span><span class="badge" data-counter="ADV-finalizacao-Z2">0</span></button>
+              <button class="zone-btn" data-team="ADV" data-section="finalizacao" data-zone="Z3"><span class="label">Z3</span><span class="badge" data-counter="ADV-finalizacao-Z3">0</span></button>
+              <button class="zone-btn" data-team="ADV" data-section="finalizacao" data-zone="Z4"><span class="label">Z4</span><span class="badge" data-counter="ADV-finalizacao-Z4">0</span></button>
+              <button class="zone-btn" data-team="ADV" data-section="finalizacao" data-zone="Z5"><span class="label">Z5</span><span class="badge" data-counter="ADV-finalizacao-Z5">0</span></button>
+              <button class="zone-btn" data-team="ADV" data-section="finalizacao" data-zone="Z6"><span class="label">Z6</span><span class="badge" data-counter="ADV-finalizacao-Z6">0</span></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Entradas no último terço</h3>
+          <div class="pitch-third">
+            <div class="zones-grid">
+              <button class="zone-btn" data-team="ADV" data-section="entrada" data-zone="Z1"><span class="label">Z1</span><span class="badge" data-counter="ADV-entrada-Z1">0</span></button>
+              <button class="zone-btn" data-team="ADV" data-section="entrada" data-zone="Z2"><span class="label">Z2</span><span class="badge" data-counter="ADV-entrada-Z2">0</span></button>
+              <button class="zone-btn" data-team="ADV" data-section="entrada" data-zone="Z3"><span class="label">Z3</span><span class="badge" data-counter="ADV-entrada-Z3">0</span></button>
+              <button class="zone-btn" data-team="ADV" data-section="entrada" data-zone="Z4"><span class="label">Z4</span><span class="badge" data-counter="ADV-entrada-Z4">0</span></button>
+              <button class="zone-btn" data-team="ADV" data-section="entrada" data-zone="Z5"><span class="label">Z5</span><span class="badge" data-counter="ADV-entrada-Z5">0</span></button>
+              <button class="zone-btn" data-team="ADV" data-section="entrada" data-zone="Z6"><span class="label">Z6</span><span class="badge" data-counter="ADV-entrada-Z6">0</span></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Ações rápidas</h3>
+          <div class="quick-grid">
+            <button class="quick-btn q1" data-team="ADV" data-section="acao" data-action="GOL"><span>GOL</span><span class="badge" data-counter="ADV-acao-GOL">0</span></button>
+            <button class="quick-btn q2" data-team="ADV" data-section="acao" data-action="ESC DEF"><span>ESC DEF</span><span class="badge" data-counter="ADV-acao-ESC DEF">0</span></button>
+            <button class="quick-btn q3" data-team="ADV" data-section="acao" data-action="FL DEF"><span>FL DEF</span><span class="badge" data-counter="ADV-acao-FL DEF">0</span></button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="export-bar">
+      <button id="exportCsvBtn" class="btn btn-success">Exportar CSV</button>
+      <button id="exportXmlBtn" class="btn btn-success">Exportar XML</button>
+    </footer>
+  </div>
+
+  <script src="./app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js').catch(console.error);
+      });
+    }
+  </script>
 </body>
 </html>

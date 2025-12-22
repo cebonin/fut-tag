@@ -1,4 +1,4 @@
-const CACHE_VERSION = 8;
+const CACHE_VERSION = 10;
 const CACHE_NAME = `hud-cache-v${CACHE_VERSION}`;
 
 const URLS_TO_CACHE = [

@@ -1,158 +1,233 @@
-// Cronômetro
-let running = false;
-let baseMs = 0;     // ms acumulados quando pausado
-let startTs = 0;    // timestamp do início atual (ms)
+// ====== Estado do Cronômetro ======
+let isRunning = false;
+let startEpoch = 0;     // performance.now() quando iniciou/retomou
+let elapsedMs = 0;      // milissegundos acumulados quando pausado
+let rafId = null;       // ID da animação para o requestAnimationFrame
 
-const $timer = document.getElementById('timer');
-const $btnStart = document.getElementById('btnStart');
-const $btnReset = document.getElementById('btnReset');
-const $btnXML = document.getElementById('btnXML');
+const timerDisplay = document.getElementById('timerDisplay');
+const btnToggleTimer = document.getElementById('btnToggleTimer');
+const btnResetTimer = document.getElementById('btnResetTimer');
 
-function fmt(t){
-  const m = Math.floor(t/60);
-  const s = Math.floor(t%60);
-  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+// ====== Funções do Cronômetro ======
+function formatTimeMMSS(ms) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
-function nowSec(){
-  const ms = running ? (baseMs + (performance.now() - startTs)) : baseMs;
-  return ms/1000;
+
+function getCurrentTimeSeconds() {
+  const currentMs = isRunning ? (elapsedMs + (performance.now() - startEpoch)) : elapsedMs;
+  return Math.max(0, currentMs / 1000); // Garante que nunca seja negativo
 }
-let rafId = null;
-function tick(){
-  $timer.textContent = fmt(nowSec());
+
+function updateTimerDisplay() {
+  timerDisplay.textContent = formatTimeMMSS(elapsedMs + (isRunning ? (performance.now() - startEpoch) : 0));
+}
+
+function tick() {
+  if (!isRunning) return;
+  updateTimerDisplay();
   rafId = requestAnimationFrame(tick);
 }
 
-$btnStart.addEventListener('click', () => {
-  if(!running){
-    // iniciar/retomar
-    running = true;
-    startTs = performance.now();
-    $btnStart.textContent = (baseMs === 0) ? 'Pausar' : 'Pausar';
-    if(!rafId) tick();
-  }else{
-    // pausar
-    running = false;
-    baseMs = baseMs + (performance.now() - startTs);
-    $btnStart.textContent = 'Retomar';
-    if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
-    $timer.textContent = fmt(nowSec());
+function startTimer() {
+  if (isRunning) return;
+  isRunning = true;
+  startEpoch = performance.now();
+  btnToggleTimer.textContent = 'Pausar';
+  tick(); // Inicia o loop de atualização do timer
+}
+
+function pauseTimer() {
+  if (!isRunning) return;
+  isRunning = false;
+  elapsedMs += performance.now() - startEpoch; // Acumula o tempo corrido
+  btnToggleTimer.textContent = 'Retomar';
+  if (rafId) cancelAnimationFrame(rafId); // Para o loop de atualização
+  updateTimerDisplay(); // Atualiza display uma última vez
+}
+
+function resetTimer() {
+  isRunning = false;
+  elapsedMs = 0;
+  btnToggleTimer.textContent = 'Iniciar';
+  if (rafId) cancelAnimationFrame(rafId);
+  timerDisplay.textContent = '00:00'; // Reseta display
+  // TODO: Se desejar, adicione aqui o reset de todos os contadores de evento e a lista 'events'.
+  // Por enquanto, o reset do timer não afeta os eventos já marcados.
+}
+
+// ====== Listeners dos Controles do Cronômetro ======
+btnToggleTimer.addEventListener('click', () => {
+  if (!isRunning && elapsedMs === 0) { // Primeira vez que inicia
+    startTimer();
+  } else if (isRunning) { // Já está rodando, então pausa
+    pauseTimer();
+  } else { // Não está rodando, mas tem tempo acumulado, então retoma
+    startTimer();
   }
 });
 
-$btnReset.addEventListener('click', () => {
-  running = false;
-  baseMs = 0;
-  $btnStart.textContent = 'Iniciar';
-  if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
-  $timer.textContent = '00:00';
-  // Não limpamos contadores/eventos automaticamente; se quiser, diga que eu ativo reset total.
+btnResetTimer.addEventListener('click', resetTimer);
+
+// ====== Gestão de Eventos e Contadores ======
+let eventIdCounter = 0; // Para gerar IDs únicos para o XML
+
+const allEventCodes = [
+  'FIN_LEC', 'ESC_OF_LEC', 'FALTA_OF_LEC', 'ENT_LEC_ESQ', 'ENT_LEC_CTR', 'ENT_LEC_DIR',
+  'FIN_ADV', 'ESC_DEF_ADV', 'FALTA_DEF_ADV', 'ENT_ADV_ESQ', 'ENT_ADV_CTR', 'ENT_ADV_DIR'
+];
+
+const eventCounts = {}; // Armazena a contagem de cada evento {code: count}
+const recordedEvents = []; // Armazena todos os eventos registrados para exportação XML
+
+// Inicializa todos os contadores a zero na memória
+allEventCodes.forEach(code => { eventCounts[code] = 0; });
+
+// Função para registrar um clique de evento
+function recordEventClick(code) {
+  if (!isRunning) {
+    alert('Por favor, inicie o cronômetro antes de registrar eventos.');
+    return;
+  }
+
+  // Atualiza contador na memória e no display
+  eventCounts[code]++;
+  const badge = document.querySelector(`[data-counter="${code}"]`);
+  if (badge) badge.textContent = eventCounts[code];
+
+  // Gera o evento para o XML
+  const currentTimeSec = getCurrentTimeSeconds();
+  const clipStartSec = Math.max(0, currentTimeSec - 25); // clipStart = t - 25s, mínimo 0
+  const clipEndSec = currentTimeSec + 10;                // clipEnd = t + 10s
+
+  recordedEvents.push({
+    id: eventIdCounter++,
+    code: code,
+    start: clipStartSec,
+    end: clipEndSec
+  });
+
+  // Feedback tátil (se suportado)
+  try { window.navigator.vibrate && window.navigator.vibrate(50); } catch (e) {}
+}
+
+// ====== Listeners dos Botões de Evento ======
+document.querySelectorAll('.event-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const code = btn.dataset.code;
+    recordEventClick(code);
+  });
 });
 
-// Registro de eventos e contadores
-const counters = Object.create(null);
-const events = []; // {team, code, t, clipStart, clipEnd}
+// ====== Funções de Exportação ======
+const btnExportXML = document.getElementById('btnExportXML');
 
-function inc(code){
-  counters[code] = (counters[code] || 0) + 1;
-  const el = document.querySelector(`[data-count="${code}"]`);
-  if(el) el.textContent = counters[code];
+function escapeXml(unsafe) {
+  return unsafe.replace(/[<>&'"]/g, function (c) {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+    }
+  });
 }
 
-function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
-
-function clickEvent(team, code){
-  const t = nowSec();
-  const clipStart = clamp(t - 25, 0, Number.MAX_SAFE_INTEGER);
-  const clipEnd = t + 10;
-  events.push({ team, code, t, clipStart, clipEnd });
-  inc(code);
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return { r, g, b };
 }
 
-// Delegação de clique para todos os botões de evento
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('.btn[data-event]');
-  if(!btn) return;
-  const code = btn.getAttribute('data-event');
-  const team = btn.closest('.team')?.dataset.team || 'NA';
-  clickEvent(team, code);
+function rgbToLiveTagProColor(rgb) {
+  return Math.round(rgb / 255 * 65535);
+}
+
+// Definições de cores e sort_order para a seção <ROWS> do XML
+const rowDefinitions = [
+  { code: 'FIN_LEC',        sort_order: 1,  color: '#4caf50' }, // Verde finalização
+  { code: 'ESC_OF_LEC',     sort_order: 2,  color: '#2196f3' }, // Azul esc of
+  { code: 'FALTA_OF_LEC',   sort_order: 3,  color: '#f44336' }, // Vermelho falta of
+  { code: 'ENT_LEC_ESQ',    sort_order: 4,  color: '#9c27b0' }, // Roxo esq
+  { code: 'ENT_LEC_CTR',    sort_order: 5,  color: '#ffeb3b' }, // Amarelo ctr
+  { code: 'ENT_LEC_DIR',    sort_order: 6,  color: '#795548' }, // Marrom dir
+
+  { code: 'FIN_ADV',        sort_order: 7,  color: '#4caf50' },
+  { code: 'ESC_DEF_ADV',    sort_order: 8,  color: '#2196f3' },
+  { code: 'FALTA_DEF_ADV',  sort_order: 9,  color: '#f44336' },
+  { code: 'ENT_ADV_ESQ',    sort_order: 10, color: '#9c27b0' },
+  { code: 'ENT_ADV_CTR',    sort_order: 11, color: '#ffeb3b' },
+  { code: 'ENT_ADV_DIR',    sort_order: 12, color: '#795548' },
+];
+
+
+function buildLiveTagProXml() {
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+  xml += `<file>\n`;
+  xml += `    <!--Generated by Juega10 Tagger Pro-->\n`;
+  xml += `    <SORT_INFO>\n`;
+  xml += `        <sort_type>sort order</sort_type>\n`;
+  xml += `    </SORT_INFO>\n`;
+  xml += `    <ALL_INSTANCES>\n`;
+
+  recordedEvents.forEach(event => {
+    xml += `        <instance>\n`;
+    xml += `            <ID>${event.id}</ID>\n`;
+    xml += `            <code>${escapeXml(event.code)}</code>\n`;
+    xml += `            <start>${event.start.toFixed(6)}</start>\n`;
+    xml += `            <end>${event.end.toFixed(6)}</end>\n`;
+    // Mantendo apenas a label do tipo Event, como simplificado
+    xml += `            <label>\n`;
+    xml += `                <group>Event</group>\n`;
+    xml += `                <text>${escapeXml(event.code)}</text>\n`;
+    xml += `            </label>\n`;
+    xml += `        </instance>\n`;
+  });
+
+  xml += `    </ALL_INSTANCES>\n`;
+  xml += `    <ROWS>\n`;
+
+  rowDefinitions.forEach(row => {
+    const rgb = hexToRgb(row.color);
+    const R = rgbToLiveTagProColor(rgb.r);
+    const G = rgbToLiveTagProColor(rgb.g);
+    const B = rgbToLiveTagProColor(rgb.b);
+    xml += `        <row>\n`;
+    xml += `            <sort_order>${row.sort_order}</sort_order>\n`;
+    xml += `            <code>${escapeXml(row.code)}</code>\n`;
+    xml += `            <R>${R}</R>\n`;
+    xml += `            <G>${G}</G>\n`;
+    xml += `            <B>${B}</B>\n`;
+    xml += `        </row>\n`;
+  });
+
+  xml += `    </ROWS>\n`;
+  xml += `</file>\n`;
+  return xml;
+}
+
+btnExportXML.addEventListener('click', () => {
+  const xmlContent = buildLiveTagProXml();
+  const blob = new Blob([xmlContent], { type: 'application/xml;charset=utf-8;' });
+  const downloadLink = document.createElement('a');
+  downloadLink.href = URL.createObjectURL(blob);
+  downloadLink.download = `juega10_events_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.xml`;
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+  URL.revokeObjectURL(downloadLink.href);
 });
 
-// Export XML (estrutura base; ajusto para seu padrão ao receber o XML completo)
-$btnXML.addEventListener('click', () => {
-  const xml = buildXML(events);
-  const blob = new Blob([xml], {type: 'application/xml'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const stamp = new Date().toISOString().replace(/[:.]/g,'-');
-  a.href = url;
-  a.download = `juega10_${stamp}.xml`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+
+// ====== Inicialização da UI ======
+window.addEventListener('load', () => {
+  updateTimerDisplay(); // Garante que o timer mostra 00:00 ao carregar
+  // Preenche os badges com os valores iniciais (0)
+  document.querySelectorAll('.count-badge').forEach(badge => {
+    badge.textContent = '0';
+  });
 });
-
-// Gerador XML genérico (vou alinhar ao seu “xml exemplo” exato assim que você enviar o arquivo completo)
-function pad(n, w){ return String(n).padStart(w, '0'); }
-function secToTC(s){
-  const h = Math.floor(s/3600);
-  const m = Math.floor((s%3600)/60);
-  const sc = Math.floor(s%60);
-  return `${pad(h,2)}:${pad(m,2)}:${pad(sc,2)}`;
-}
-
-function buildXML(evts){
-  // OBS: importadores variam. Aqui um esqueleto seguro com <file><EVENTS> e <ROWS>.
-  // Ajusto tags/nó-raiz e metadados para seu software quando você me enviar o exemplo completo.
-  const rows = [
-    {code:'FIN_L', name:'Finalização LEC', R:255,G:255,B:255},
-    {code:'FIN_A', name:'Finalização ADV', R:255,G:255,B:255},
-    {code:'ESC_OF', name:'Escanteio Ofensivo', R:200,G:180,B:140},
-    {code:'FALTA_OF', name:'Falta Ofensiva', R:240,G:210,B:80},
-    {code:'ESC_DEF', name:'Escanteio Defensivo', R:200,G:180,B:140},
-    {code:'FALTA_DEF', name:'Falta Defensiva', R:240,G:210,B:80},
-    {code:'ENT_L_ESQ', name:'Entrada LEC Esquerda', R:180,G:80,B:220},
-    {code:'ENT_L_CTR', name:'Entrada LEC Centro', R:60,G:80,B:200},
-    {code:'ENT_L_DIR', name:'Entrada LEC Direita', R:0,G:140,B:120},
-    {code:'ENT_A_ESQ', name:'Entrada ADV Esquerda', R:180,G:80,B:220},
-    {code:'ENT_A_CTR', name:'Entrada ADV Centro', R:60,G:80,B:200},
-    {code:'ENT_A_DIR', name:'Entrada ADV Direita', R:0,G:140,B:120},
-  ];
-
-  const rowMap = new Map(rows.map((r,i)=>[r.code, {...r, sort:i+1}]));
-
-  const eventsXml = evts.map((e, idx) => {
-    const tcStart = secToTC(e.clipStart);
-    const tcEnd = secToTC(e.clipEnd);
-    // Muitas suítes aceitam <code>, <start>, <end>, <team>, <index>. Ajusto nomes ao seu padrão depois.
-    return `
-    <event>
-      <index>${idx+1}</index>
-      <team>${e.team}</team>
-      <code>${e.code}</code>
-      <time>${secToTC(e.t)}</time>
-      <clipStart>${tcStart}</clipStart>
-      <clipEnd>${tcEnd}</clipEnd>
-    </event>`;
-  }).join('');
-
-  const rowsXml = rows.map(r => `
-    <row>
-      <sort_order>${r.sort}</sort_order>
-      <code>${r.code}</code>
-      <R>${r.R}</R>
-      <G>${r.G}</G>
-      <B>${r.B}</B>
-    </row>`).join('');
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<file>
-  <EVENTS>
-  ${eventsXml}
-  </EVENTS>
-  <ROWS>
-  ${rowsXml}
-  </ROWS>
-</file>`;
-}

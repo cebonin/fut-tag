@@ -3,102 +3,144 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f0" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="apple-touch-icon" href="./icons/icon-180.png" />
-  <link rel="manifest" href="./manifest.json" />
-  <title>Juega10 – Tagueamento Simplificado</title>
+  <title>Juega10 Tagger</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#0d6efd">
+  <link rel="apple-touch-icon" href="./icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
   <link rel="stylesheet" href="./styles.css" />
-  <script defer src="./app.js"></script>
 </head>
 <body>
   <div class="app">
+
     <header class="topbar">
-      <div class="timer">
-        <span id="period">Jogo</span>
-        <span id="clock">00:00</span>
-      </div>
-      <div class="time-controls">
-        <button id="btnToggleTimer" class="btn action primary">Iniciar</button>
-        <button id="btnResetTimer" class="btn action danger">Zerar</button>
+      <div class="time-and-actions">
+        <div class="timer-display" id="timerDisplay">00:00</div>
+        <div class="timer-actions">
+          <button id="btnToggleTimer" class="btn action primary">Iniciar</button>
+          <button id="btnResetTimer" class="btn action">Zerar</button>
+        </div>
       </div>
     </header>
 
-    <main class="grid-2">
-      <!-- Coluna LEC -->
-      <section class="team-col">
-        <h2 class="team-title lec">LEC</h2>
+    <main class="main two-columns">
+      <!-- LEC -->
+      <section class="team-col lec" aria-label="LEC">
+        <h2 class="team-title">LEC</h2>
 
-        <div class="block">
-          <h3>Finalização</h3>
-          <button class="btn big fin lec"
-                  data-code="FIN_LEC"
-                  data-team="LEC">
-            Finalização LEC
-            <span class="badge" id="count_FIN_LEC">0</span>
-          </button>
+        <!-- Finalização LEC -->
+        <div class="group">
+          <h3 class="group-title">Finalização</h3>
+          <div class="row final-row">
+            <button
+              class="btn event big final"
+              data-code="FIN LEC"
+              id="btnFinLEC"
+            >
+              Finalização LEC
+              <span class="badge" id="count-FIN LEC">0</span>
+            </button>
+
+            <div class="side-actions">
+              <button
+                class="btn event side esc"
+                data-code="ESC OF"
+                id="btnEscOfLEC"
+              >
+                ESC OF
+                <span class="badge" id="count-ESC OF">0</span>
+              </button>
+
+              <button
+                class="btn event side foul"
+                data-code="FALTA OF"
+                id="btnFaltaOfLEC"
+              >
+                FALTA OF
+                <span class="badge" id="count-FALTA OF">0</span>
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div class="block">
-          <h3>Entradas no Último Terço</h3>
-          <div class="grid-3">
-            <button class="btn huge ent lateral"
-                    data-code="ENT_LAT_LEC"
-                    data-team="LEC">
-              Lateral
-              <span class="badge" id="count_ENT_LAT_LEC">0</span>
+        <!-- Entradas LEC -->
+        <div class="group">
+          <h3 class="group-title">Entradas no Último Terço</h3>
+          <div class="row three">
+            <button class="btn event lane left" data-code="ENT LEC ESQ" id="btnEntLECEsq">
+              Esquerda
+              <span class="badge" id="count-ENT LEC ESQ">0</span>
             </button>
-            <button class="btn huge ent central"
-                    data-code="ENT_CEN_LEC"
-                    data-team="LEC">
-              Central
-              <span class="badge" id="count_ENT_CEN_LEC">0</span>
+            <button class="btn event lane center" data-code="ENT LEC CEN" id="btnEntLECCen">
+              Centro
+              <span class="badge" id="count-ENT LEC CEN">0</span>
             </button>
-            <button class="btn huge ent profundidade"
-                    data-code="ENT_PROF_LEC"
-                    data-team="LEC">
-              Profundidade
-              <span class="badge" id="count_ENT_PROF_LEC">0</span>
+            <button class="btn event lane right" data-code="ENT LEC DIR" id="btnEntLECDir">
+              Direita
+              <span class="badge" id="count-ENT LEC DIR">0</span>
             </button>
           </div>
         </div>
       </section>
 
-      <!-- Coluna ADV -->
-      <section class="team-col">
-        <h2 class="team-title adv">ADV</h2>
+      <!-- ADV -->
+      <section class="team-col adv" aria-label="ADV">
+        <h2 class="team-title">ADV</h2>
 
-        <div class="block">
-          <h3>Finalização</h3>
-          <button class="btn big fin adv"
-                  data-code="FIN_ADV"
-                  data-team="ADV">
-            Finalização ADV
-            <span class="badge" id="count_FIN_ADV">0</span>
-          </button>
+        <!-- Finalização ADV -->
+        <div class="group">
+          <h3 class="group-title">Finalização</h3>
+          <div class="row final-row">
+            <button
+              class="btn event big final"
+              data-code="FIN ADV"
+              id="btnFinADV"
+            >
+              Finalização ADV
+              <span class="badge" id="count-FIN ADV">0</span>
+            </button>
+
+            <div class="side-actions">
+              <button
+                class="btn event side esc"
+                data-code="ESC DEF"
+                id="btnEscDefADV"
+              >
+                ESC DEF
+                <span class="badge" id="count-ESC DEF">0</span>
+              </button>
+
+              <button
+                class="btn event side foul"
+                data-code="FALTA DEF"
+                id="btnFaltaDefADV"
+              >
+                FALTA DEF
+                <span class="badge" id="count-FALTA DEF">0</span>
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div class="block">
-          <h3>Entradas no Último Terço</h3>
-          <div class="grid-3">
-            <button class="btn huge ent lateral"
-                    data-code="ENT_LAT_ADV"
-                    data-team="ADV">
-              Lateral
-              <span class="badge" id="count_ENT_LAT_ADV">0</span>
+        <!-- Entradas ADV -->
+        <div class="group">
+          <h3 class="group-title">Entradas no Último Terço</h3>
+          <div class="row three">
+            <button class="btn event lane left" data-code="ENT ADV ESQ" id="btnEntADESq">
+              Esquerda
+              <span class="badge" id="count-ENT ADV ESQ">0</span>
             </button>
-            <button class="btn huge ent central"
-                    data-code="ENT_CEN_ADV"
-                    data-team="ADV">
-              Central
-              <span class="badge" id="count_ENT_CEN_ADV">0</span>
+            <button class="btn event lane center" data-code="ENT ADV CEN" id="btnEntADVCen">
+              Centro
+              <span class="badge" id="count-ENT ADV CEN">0</span>
             </button>
-            <button class="btn huge ent profundidade"
-                    data-code="ENT_PROF_ADV"
-                    data-team="ADV">
-              Profundidade
-              <span class="badge" id="count_ENT_PROF_ADV">0</span>
+            <button class="btn event lane right" data-code="ENT ADV DIR" id="btnEntADVDir">
+              Direita
+              <span class="badge" id="count-ENT ADV DIR">0</span>
             </button>
           </div>
         </div>
@@ -106,12 +148,21 @@
     </main>
 
     <footer class="footer">
-      <div class="export">
+      <div class="export-actions">
         <button id="btnExportCSV" class="btn export">Exportar CSV</button>
-        <button id="btnExportXML" class="btn export">Exportar XML</button>
+        <button id="btnExportXML" class="btn export primary">Exportar XML</button>
       </div>
-      <div class="note">PWA offline • Toque nos botões para marcar eventos</div>
+      <div class="hint">PWA offline • Toque nos botões para registrar eventos</div>
     </footer>
   </div>
+
+  <script src="./app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js');
+      });
+    }
+  </script>
 </body>
 </html>

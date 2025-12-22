@@ -1,5 +1,5 @@
-const CACHE_VERSION = 10;
-const CACHE_NAME = `hud-cache-v${CACHE_VERSION}`;
+const CACHE_VERSION = 11; // <--- MUDAR ESTE NÚMERO AO ATUALIZAR ARQUIVOS PARA FORÇAR CACHE
+const CACHE_NAME = `juega10-tagger-cache-v${CACHE_VERSION}`;
 
 const URLS_TO_CACHE = [
   './',
@@ -7,51 +7,68 @@ const URLS_TO_CACHE = [
   './styles.css',
   './app.js',
   './manifest.json',
-  // icons
-  './icons/icon-72.png',
-  './icons/icon-96.png',
-  './icons/icon-128.png',
-  './icons/icon-144.png',
-  './icons/icon-152.png',
+  // Ícones (ajuste a lista conforme os arquivos que você tem na pasta icons/)
   './icons/icon-180.png',
   './icons/icon-192.png',
-  './icons/icon-256.png',
-  './icons/icon-384.png',
   './icons/icon-512.png'
 ];
 
+// Instalação: pré-cacheia os recursos
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(URLS_TO_CACHE))
-      .then(() => self.skipWaiting())
+      .then(cache => {
+        console.log(`[SW] Cache ${CACHE_NAME} opened, adding URLs...`);
+        return cache.addAll(URLS_TO_CACHE);
+      })
+      .then(() => self.skipWaiting()) // Força o service worker a ativar imediatamente
+      .catch(error => console.error('[SW] Cache.addAll failed:', error))
   );
 });
 
+// Ativação: limpa caches antigos
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : Promise.resolve()))
-      )
-    ).then(() => self.clients.claim())
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.filter(name => name.startsWith('juega10-tagger-cache-v') && name !== CACHE_NAME)
+          .map(name => {
+            console.log(`[SW] Deleting old cache: ${name}`);
+            return caches.delete(name);
+          })
+      );
+    }).then(() => self.clients.claim()) // Permite que o novo SW controle os clientes imediatamente
+    .catch(error => console.error('[SW] Activate failed:', error))
   );
 });
 
+// Fetch: estratégia de cache-first (depois network)
 self.addEventListener('fetch', (event) => {
-  const req = event.request;
-  if (req.method !== 'GET') return;
+  const request = event.request;
+  // Apenas lida com requisições GET
+  if (request.method !== 'GET') {
+    return;
+  }
 
+  // Verifica se a requisição está no cache, senão tenta da rede
   event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req)
-        .then((res) => {
-          const resClone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
-          return res;
-        })
-        .catch(() => caches.match('./'));
+    caches.match(request).then(cachedResponse => {
+      // Se encontrou no cache, retorna
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      // Senão, tenta buscar da rede
+      return fetch(request).then(networkResponse => {
+        // Clona a resposta para poder armazenar no cache e retornar ao cliente
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(request, responseToCache);
+        });
+        return networkResponse;
+      }).catch(() => {
+        // Fallback offline (se a requisição falhar e não estiver no cache, retorna a página principal)
+        return caches.match('./');
+      });
     })
   );
 });

@@ -1,5 +1,5 @@
 // ***** MUDE ESTE NÚMERO PARA UM VALOR MAIOR A CADA NOVA PUBLICAÇÃO! *****
-const CACHE_VERSION = 12; // << AGORA É 10! DA PRÓXIMA VEZ, MUDARIA PARA 11.
+const CACHE_VERSION = 13; // << AGORA É 10! DA PRÓXIMA VEZ, MUDARIA PARA 11.
 // **********************************************************************
 const CACHE_NAME = `juega10-tagger-cache-v${CACHE_VERSION}`;
 

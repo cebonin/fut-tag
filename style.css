@@ -1,170 +1,232 @@
 :root{
-  /* Escala global dos botões */
-  --gap: 14px;
-  --btn-radius: 12px;
-  --btn-font: 20px;
-  --btn-font-big: 22px;
-  --btn-h-sm: 70px;
-  --btn-h-md: 92px;
-  --btn-h-lg: 136px;
+  --bg: #1a1a2e;
+  --panel-bg: #21213b;
+  --text-color: #e0e0f0;
+  --muted-text: #a0a0c0;
 
-  /* Cores sugeridas (ajustáveis) */
-  --lec-base: #1e88e5;
-  --lec-contrast: #ffffff;
-  --adv-base: #e53935;
-  --adv-contrast: #ffffff;
+  --lec-color: #00bcd4; /* Ciano para LEC */
+  --adv-color: #ff9800; /* Laranja para ADV */
 
-  --finalizacao-bg: #2e7d32; /* verde destaque */
-  --finalizacao-fg: #ffffff;
+  --btn-final-bg: #4caf50; /* Verde intenso */
+  --btn-esc-bg: #2196f3; /* Azul */
+  --btn-falta-bg: #f44336; /* Vermelho */
 
-  --esc-bg: #6d4c41;    /* marrom/terra */
-  --esc-fg: #ffffff;
-  --falta-bg: #f9a825;  /* amarelo */
-  --falta-fg: #1b1b1b;
+  --btn-entry-esq-bg: #9c27b0; /* Roxo */
+  --btn-entry-ctr-bg: #ffeb3b; /* Amarelo */
+  --btn-entry-dir-bg: #795548; /* Marrom */
 
-  --entrada-esq-bg: #8e24aa; /* roxo */
-  --entrada-ctr-bg: #3949ab; /* azul escuro */
-  --entrada-dir-bg: #00897b; /* teal */
+  --primary-action-bg: #00e676; /* Verde neon */
+  --reset-action-bg: #607d8b; /* Cinza azulado */
+  --export-action-bg: #673ab7; /* Roxo escuro */
 
-  --surface: #f4f6f8;
-  --panel: #ffffff;
-  --text: #0b0b0b;
-  --muted: #6a6a6a;
+  --gap: 12px;
+  --radius: 12px;
+  --shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
-/* Reset essencial */
-*{ box-sizing: border-box; }
-html, body{ height: 100%; margin: 0; }
+/* Base Reset & Globals */
+*{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html,body{ margin:0; padding:0; height:100%; }
 body{
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  color: var(--text);
-  background: var(--surface);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+  color: var(--text-color);
+  background-color: var(--bg);
 }
 
-/* Usar 100dvh em iOS/Safari para não “pular” com barras */
-.app{
-  min-height: 100dvh;
-  display: grid;
-  grid-template-rows: 1fr auto; /* conteúdo + barra inferior */
+.app-container{
+  min-height: 100dvh; /* Usa a altura dinâmica da viewport */
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
-/* Área de conteúdo: duas colunas fixas (LEC/ADV) */
-.content{
+/* Main Layout (Two Columns) */
+.main-layout{
+  flex-grow: 1; /* Ocupa todo o espaço vertical disponível */
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--gap);
-  padding: calc(env(safe-area-inset-top, 0px) + var(--gap)) var(--gap) var(--gap);
-}
-
-/* Painéis por equipe */
-.team{
-  background: var(--panel);
-  border-radius: 14px;
   padding: var(--gap);
-  display: grid;
-  grid-template-rows: auto auto 1fr; /* título, seção ações altas, entradas */
-  gap: var(--gap);
+  overflow-y: auto; /* Permite rolagem se o conteúdo exceder a altura */
 }
 
-/* Cabeçalho de equipe */
-.team-header{
+/* Team Column */
+.team-column{
+  background-color: var(--panel-bg);
+  border-radius: var(--radius);
+  padding: var(--gap);
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.team-name{
+  text-align: center;
+  font-size: 1.5rem;
   font-weight: 700;
-  font-size: 18px;
+  margin: 0 0 var(--gap) 0;
+  padding-bottom: var(--gap);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 }
+.team-column.lec .team-name{ color: var(--lec-color); }
+.team-column.adv .team-name{ color: var(--adv-color); }
 
-/* Linha “Finalização (grande) + coluna ESC/FALTA (empilhados)” */
-.actions-row{
-  display: grid;
-  grid-template-columns: 1.3fr 1fr; /* Finalização mais larga */
+/* Action Group (Finalization, Entries, etc.) */
+.action-group{
+  display: flex;
+  flex-direction: column;
   gap: var(--gap);
+  flex-grow: 1; /* Faz os grupos expandirem */
+}
+.group-title{
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-/* Coluna lateral para ESC/FALTA */
-.actions-col{
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  gap: var(--gap);
-}
-
-/* Entradas em 3 colunas */
-.entradas-grid{
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: var(--gap);
-}
-
-/* Botões base */
+/* Buttons Base Style */
 .btn{
   border: none;
-  border-radius: var(--btn-radius);
-  color: #fff;
-  font-size: var(--btn-font);
+  border-radius: var(--radius);
+  color: var(--text-color);
   font-weight: 700;
-  padding: 12px;
-  width: 100%;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  line-height: 1.1;
   cursor: pointer;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Tamanhos específicos */
-.btn-lg{ min-height: var(--btn-h-lg); font-size: var(--btn-font-big); }
-.btn-md{ min-height: var(--btn-h-md); }
-.btn-sm{ min-height: var(--btn-h-sm); }
-
-/* Cores por função */
-.btn-final{ background: var(--finalizacao-bg); color: var(--finalizacao-fg); }
-.btn-esc{ background: var(--esc-bg); color: var(--esc-fg); }
-.btn-falta{ background: var(--falta-bg); color: var(--falta-fg); }
-
-.btn-entrada-esq{ background: var(--entrada-esq-bg); }
-.btn-entrada-ctr{ background: var(--entrada-ctr-bg); }
-.btn-entrada-dir{ background: var(--entrada-dir-bg); }
-
-/* Barras de cor por equipe no topo do painel */
-.team.lec .team-header .badge{ background: var(--lec-base); color: var(--lec-contrast); }
-.team.adv .team-header .badge{ background: var(--adv-base); color: var(--adv-contrast); }
-.badge{
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-/* Barra inferior fixa: timer + botões grandes e acessíveis */
-.footer{
-  position: sticky;
-  bottom: 0;
-  background: var(--panel);
-  border-top: 1px solid #e5e7eb;
-  padding: 10px calc(env(safe-area-inset-right, 0px) + 10px) calc(env(safe-area-inset-bottom, 0px) + 10px) calc(env(safe-area-inset-left, 0px) + 10px);
-  display: grid;
-  grid-template-columns: auto 1fr 1fr 1fr; /* timer, iniciar/pausar, zerar, export */
-  gap: 10px;
+  transition: transform 0.1s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: var(--shadow);
+  display: flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative; /* For badge positioning */
+  padding: var(--gap);
 }
-.timer{
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  font-size: 20px;
-}
-.footer .btn{
-  min-height: 56px;
-  font-size: 16px;
-  color: #fff;
-}
-.btn-start{ background: #2e7d32; }
-.btn-reset{ background: #5f6368; }
-.btn-csv{ background: #1565c0; }
-.btn-xml{ background: #6a1b9a; }
+.btn:active{ transform: scale(0.98); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
 
-/* Estados: foco/ativo para feedback tátil/visual */
-.btn:active{ transform: scale(0.98); }
-.btn:focus-visible{ outline: 3px solid rgba(255,255,255,0.6); outline-offset: 2px; }
+/* Event Buttons (Finalization, ESC/FALTA, Entries) */
+.event-btn{
+  font-size: 1.1rem;
+}
+
+/* Finalization Row Layout */
+.final-row{
+  display: grid;
+  grid-template-columns: 3fr 1fr; /* Finalization takes more space */
+  gap: var(--gap);
+  flex-grow: 1; /* Makes finalization row fill space */
+}
+.final-btn{
+  background-color: var(--btn-final-bg);
+  min-height: 150px; /* Muito Grande */
+  font-size: 1.3rem;
+  grid-column: 1;
+}
+
+.side-action-col{
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  grid-column: 2;
+}
+.side-btn{
+  min-height: 70px; /* Metade do final-btn */
+  font-size: 1rem;
+}
+.esc-of, .esc-def{ background-color: var(--btn-esc-bg); }
+.falta-of, .falta-def{ background-color: var(--btn-falta-bg); }
+
+
+/* Entries Grid Layout (3 buttons in one row) */
+.entries-grid{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap);
+  flex-grow: 1; /* Makes entries fill space */
+}
+.entry-btn{
+  min-height: 100px; /* Grande */
+  font-size: 1rem;
+}
+.entry-esq{ background-color: var(--btn-entry-esq-bg); }
+.entry-ctr{ background-color: var(--btn-entry-ctr-bg); }
+.entry-dir{ background-color: var(--btn-entry-dir-bg); }
+
+
+/* Count Badges */
+.count-badge{
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(0,0,0,0.3);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  min-width: 30px; /* Garante que o badge não encolha demais */
+  text-align: center;
+}
+
+/* Bottom Bar (Timer & Controls) */
+.bottom-bar{
+  background-color: var(--panel-bg);
+  padding: var(--gap) calc(env(safe-area-inset-right) + var(--gap)) calc(env(safe-area-inset-bottom) + var(--gap)) calc(env(safe-area-inset-left) + var(--gap));
+  display: flex;
+  flex-wrap: wrap; /* Permite quebrar linha em telas pequenas */
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--gap);
+  border-top: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 -4px 8px rgba(0,0,0,0.2);
+  position: sticky; /* Sticky footer */
+  bottom: 0;
+  z-index: 10;
+}
+
+.timer-display{
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums; /* Alinha dígitos */
+  flex-shrink: 0; /* Não deixa o timer encolher */
+}
+
+.bottom-buttons{
+  display: flex;
+  flex-grow: 1; /* Botões ocupam o espaço restante */
+  gap: var(--gap);
+  justify-content: flex-end;
+  flex-wrap: wrap; /* Quebra linha se muitos botões */
+}
+.action-btn{
+  min-width: 100px; /* Largura mínima para botões de ação */
+  min-height: 50px; /* Altura mínima para fácil toque */
+  font-size: 1rem;
+  flex-grow: 1; /* Faz os botões expandirem */
+}
+.action-btn.primary{ background-color: var(--primary-action-bg); color: #1a1a2e; }
+.action-btn.reset{ background-color: var(--reset-action-bg); }
+.action-btn.export{ background-color: var(--export-action-bg); }
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .main-layout {
+    grid-template-columns: 1fr; /* Pilha as colunas em telas menores */
+  }
+}
+@media (max-width: 480px) {
+  .bottom-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .timer-display {
+    text-align: center;
+    width: 100%;
+  }
+  .bottom-buttons {
+    justify-content: center;
+  }
+  .action-btn {
+    min-width: 120px; /* Aumenta um pouco em telas muito pequenas */
+  }
+}

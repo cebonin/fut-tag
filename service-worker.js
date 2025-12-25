@@ -1,5 +1,5 @@
 // ***** MUDE ESTE NÚMERO PARA UM VALOR MAIOR A CADA NOVA PUBLICAÇÃO! *****
-const CACHE_VERSION = 30; // << VERSÃO ATUALIZADA PARA FUTTAG PRO v2.1
+const CACHE_VERSION = 35; // << VERSÃO ATUALIZADA PARA FUTTAG PRO v2.2
 // **********************************************************************
 const CACHE_NAME = `futtag-pro-cache-v${CACHE_VERSION}`;
 
@@ -15,23 +15,23 @@ const URLS_TO_CACHE = [
   './icons/icon-512.png',
   // Bibliotecas externas para funcionar offline
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
+  'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js', // NOVO PLUGIN
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
 ];
 
 // Instalação: pré-cacheia os recursos
 self.addEventListener('install', (event) => {
-  console.log(`[SW] Installing FutTag Pro v2.1 Service Worker v${CACHE_VERSION}...`);
+  console.log(`[SW] Installing FutTag Pro v2.2 Service Worker v${CACHE_VERSION}...`);
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log(`[SW] Cache ${CACHE_NAME} opened, adding URLs...`);
-        // Tenta cachear tudo, mas não falha se alguma URL der erro
         return Promise.allSettled(
           URLS_TO_CACHE.map(url => 
             cache.add(url).catch(err => {
               console.warn(`[SW] Failed to cache ${url}:`, err);
-              return Promise.resolve(); // Continue mesmo se falhar
+              return Promise.resolve();
             })
           )
         );
@@ -43,7 +43,7 @@ self.addEventListener('install', (event) => {
 
 // Ativação: limpa caches antigos
 self.addEventListener('activate', (event) => {
-  console.log(`[SW] Activating FutTag Pro v2.1 Service Worker v${CACHE_VERSION}...`);
+  console.log(`[SW] Activating FutTag Pro v2.2 Service Worker v${CACHE_VERSION}...`);
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -64,42 +64,28 @@ self.addEventListener('activate', (event) => {
 // Fetch: estratégia de cache-first com fallback inteligente
 self.addEventListener('fetch', (event) => {
   const request = event.request;
-  
-  // Apenas lida com requisições GET
-  if (request.method !== 'GET') {
-    return;
-  }
-
-  // Ignora requisições de extensões do navegador
-  if (request.url.startsWith('chrome-extension://') || 
-      request.url.startsWith('moz-extension://') ||
-      request.url.startsWith('safari-extension://')) {
+  if (request.method !== 'GET' || request.url.startsWith('chrome-extension://') || 
+      request.url.startsWith('moz-extension://') || request.url.startsWith('safari-extension://')) {
     return;
   }
 
   event.respondWith(
     caches.match(request)
       .then(cachedResponse => {
-        // Se encontrou no cache, retorna
         if (cachedResponse) {
-          // Para recursos externos, tenta atualizar o cache em background
-          if (request.url.includes('cdn.jsdelivr.net') || 
-              request.url.includes('cdnjs.cloudflare.com')) {
-            // Background fetch para manter atualizado
+          if (request.url.includes('cdn.jsdelivr.net') || request.url.includes('cdnjs.cloudflare.com')) {
             fetch(request).then(response => {
               if (response.ok) {
                 caches.open(CACHE_NAME).then(cache => {
                   cache.put(request, response.clone());
                 });
               }
-            }).catch(() => {}); // Ignora erros de background update
+            }).catch(() => {});
           }
           return cachedResponse;
         }
         
-        // Se não está no cache, tenta buscar da rede
         return fetch(request).then(networkResponse => {
-          // Se a resposta for válida, cacheia
           if (networkResponse.ok) {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then(cache => {
@@ -108,11 +94,9 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         }).catch(() => {
-          // Fallback offline: retorna a página principal para navegação
           if (request.mode === 'navigate') {
             return caches.match('./index.html');
           }
-          // Para outros recursos, retorna undefined (erro 404)
           return new Response('Offline - Resource not available', {
             status: 404,
             statusText: 'Offline'
@@ -122,23 +106,8 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Message listener para comunicação com o app
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
-});
-
-// Sync background para futuras funcionalidades
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
-    console.log('[SW] Background sync triggered');
-    // Aqui poderia implementar sincronização de dados offline
-  }
-});
-
-// Push notifications para futuras funcionalidades
-self.addEventListener('push', (event) => {
-  console.log('[SW] Push message received');
-  // Futuras notificações push podem ser implementadas aqui
 });

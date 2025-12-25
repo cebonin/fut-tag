@@ -19,6 +19,8 @@
   <link rel="stylesheet" href="./styles.css" />
   <!-- Chart.js para os gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Chart.js Plugin Datalabels para rótulos otimizados -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <!-- jsPDF para gerar PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <!-- html2canvas para converter canvas em imagem -->
@@ -223,20 +225,18 @@
       
       <!-- Container para gráficos temporários (não visíveis) -->
       <div id="chartsContainer" style="display: none;">
-        <!-- Finalizações -->
-        <canvas id="fin1TChart" width="600" height="400"></canvas>
-        <canvas id="fin2TChart" width="600" height="400"></canvas>
-        <canvas id="finTotalChart" width="600" height="400"></canvas>
+        <!-- Canvas para os gráficos de PDF. Tamanhos otimizados para captura. -->
+        <canvas id="fin1TChart" width="800" height="350"></canvas>
+        <canvas id="fin2TChart" width="800" height="350"></canvas>
+        <canvas id="finTotalChart" width="800" height="350"></canvas>
         
-        <!-- Entradas -->
-        <canvas id="ent1TChart" width="600" height="400"></canvas>
-        <canvas id="ent2TChart" width="600" height="400"></canvas>
-        <canvas id="entTotalChart" width="600" height="400"></canvas>
+        <canvas id="ent1TChart" width="800" height="350"></canvas>
+        <canvas id="ent2TChart" width="800" height="350"></canvas>
+        <canvas id="entTotalChart" width="800" height="350"></canvas>
         
-        <!-- Escanteios e Faltas -->
-        <canvas id="escFalta1TChart" width="600" height="400"></canvas>
-        <canvas id="escFalta2TChart" width="600" height="400"></canvas>
-        <canvas id="escFaltaTotalChart" width="600" height="400"></canvas>
+        <canvas id="escFalta1TChart" width="800" height="350"></canvas>
+        <canvas id="escFalta2TChart" width="800" height="350"></canvas>
+        <canvas id="escFaltaTotalChart" width="800" height="350"></canvas>
       </div>
 
       <div class="stats-preview">

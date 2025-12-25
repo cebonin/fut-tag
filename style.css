@@ -1,0 +1,414 @@
+:root {
+  --bg: #1a1a2e;
+  --panel-bg: #21213b;
+  --text-color: #e0e0f0;
+  --muted-text: #a0a0c0;
+
+  --lec-color: #00bcd4; /* Ciano para LEC */
+  --adv-color: #ff9800; /* Laranja para ADV */
+
+  --btn-default-bg: #333; /* Cor base para a maioria dos botões */
+
+  --btn-fin-bg: #4caf50; /* Verde intenso para Finalizações */
+  --btn-entry-bg: #9c27b0; /* Roxo para Entradas */
+
+  --btn-gol-bg: #e91e63; /* Rosa para Gol */
+  --btn-esc-bg: #2196f3; /* Azul para ESC */
+  --btn-falta-bg: #f44336; /* Vermelho para FL */
+
+  --half-btn-active-bg: #ffc107; /* Amarelo para half ativo */
+  --half-btn-text: #21213b;
+
+  --primary-action-bg: #00e676; /* Verde neon */
+  --undo-action-bg: #607d8b; /* Cinza azulado */
+  --reset-action-bg: #f44336; /* Vermelho para reset */
+  --stats-action-bg: #673ab7; /* Roxo escuro para stats */
+  --export-action-bg: #009688; /* Verde água para exportar */
+
+  --gap: 12px;
+  --radius: 12px;
+  --shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Base Reset & Globals */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+  color: var(--text-color);
+  background-color: var(--bg);
+  overflow: hidden; /* Evita rolagem do body principal */
+}
+
+.app-container {
+  min-height: 100dvh; /* Usa a altura dinâmica da viewport */
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Game Header (Top Bar) */
+.game-header {
+  background-color: var(--panel-bg);
+  padding: var(--gap);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  align-items: center;
+}
+
+.half-controls {
+  display: flex;
+  gap: calc(var(--gap) / 2);
+  width: 100%;
+  justify-content: center;
+}
+
+.half-btn {
+  background-color: var(--btn-default-bg);
+  color: var(--text-color);
+  font-size: 0.85rem;
+  padding: 8px 10px;
+  border-radius: 8px;
+  flex-grow: 1;
+  max-width: 120px;
+}
+.half-btn.active {
+  background-color: var(--half-btn-active-bg);
+  color: var(--half-btn-text);
+  box-shadow: var(--shadow);
+}
+
+.game-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 400px; /* Limita a largura em telas muito largas */
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.current-half-display {
+  color: var(--half-btn-active-bg);
+  min-width: 50px;
+  text-align: left;
+}
+
+.score-display {
+  flex-grow: 1;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+
+.timer-display {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+  min-width: 80px;
+  text-align: right;
+}
+
+
+/* Main Layout (Two Columns) */
+.main-layout {
+  flex-grow: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+  padding: var(--gap);
+  overflow-y: auto; /* Permite rolagem se o conteúdo exceder a altura */
+}
+
+/* Team Column */
+.team-column {
+  background-color: var(--panel-bg);
+  border-radius: var(--radius);
+  padding: var(--gap);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.team-name {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 var(--gap) 0;
+  padding-bottom: var(--gap);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.team-column.lec .team-name { color: var(--lec-color); }
+.team-column.adv .team-name { color: var(--adv-color); }
+
+/* Action Group */
+.action-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  flex-grow: 1;
+}
+.group-title {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Buttons Base Style */
+.btn {
+  border: none;
+  border-radius: var(--radius);
+  color: var(--text-color);
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative; /* For badge positioning */
+  padding: var(--gap);
+  background-color: var(--btn-default-bg); /* Cor padrão para botões */
+}
+.btn:active { transform: scale(0.98); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+
+/* Event Buttons */
+.event-btn {
+  font-size: 1.1rem;
+  min-height: 70px; /* Altura padrão para eventos */
+}
+
+/* Field Grid Buttons (Finalizações, Entradas) */
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: calc(var(--gap) / 2); /* Gap menor entre zonas do campo */
+  flex-grow: 1;
+  background-image: url('data:image/svg+xml;utf8,<svg width="100%" height="100%" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="0.5" width="99" height="99" stroke="%23333"/><rect x="0.5" y="25.5" width="25" height="49" stroke="%23333"/><rect x="74.5" y="25.5" width="25" height="49" stroke="%23333"/><rect x="0.5" y="40.5" width="10" height="19" stroke="%23333"/><rect x="89.5" y="40.5" width="10" height="19" stroke="%23333"/><circle cx="50" cy="50" r="10" stroke="%23333"/><circle cx="50" cy="50" r="1" fill="%23333"/><line x1="50" y1="0" x2="50" y2="100" stroke="%23333"/><line x1="0" y1="20" x2="100" y2="20" stroke="%23333"/><line x1="0" y1="80" x2="100" y2="80" stroke="%23333"/></svg>');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 5px; /* Para não sobrepor a imagem de fundo */
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.field-zone-btn {
+  min-height: 80px;
+  background-color: rgba(0, 0, 0, 0.4); /* Botões semi-transparentes sobre o campo */
+  color: var(--text-color);
+  font-size: 0.9rem;
+  padding: var(--gap) calc(var(--gap) / 2);
+}
+.action-group:nth-of-type(1) .field-zone-btn { background-color: var(--btn-fin-bg); } /* Finalizações */
+.action-group:nth-of-type(2) .field-zone-btn { background-color: var(--btn-entry-bg); } /* Entradas */
+
+/* Gol Buttons */
+.gol-group {
+  margin-top: var(--gap);
+}
+.gol-btn {
+  background-color: var(--btn-gol-bg);
+  min-height: 100px;
+  font-size: 1.3rem;
+}
+
+/* Side Action Buttons (ESC, FL) */
+.side-actions-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+  margin-top: var(--gap);
+}
+.side-btn {
+  min-height: 70px;
+  font-size: 1rem;
+}
+.esc-of, .esc-def { background-color: var(--btn-esc-bg); }
+.falta-of, .falta-def { background-color: var(--btn-falta-bg); }
+
+
+/* Count Badges */
+.count-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(0,0,0,0.4);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  min-width: 30px;
+  text-align: center;
+  line-height: 1; /* Centraliza o texto verticalmente */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Bottom Bar (Controls) */
+.bottom-bar {
+  background-color: var(--panel-bg);
+  padding: var(--gap) calc(env(safe-area-inset-right) + var(--gap)) calc(env(safe-area-inset-bottom) + var(--gap)) calc(env(safe-area-inset-left) + var(--gap));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--gap);
+  border-top: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 -4px 8px rgba(0,0,0,0.2);
+  z-index: 10;
+}
+
+.bottom-buttons {
+  display: flex;
+  flex-grow: 1;
+  gap: var(--gap);
+  justify-content: space-evenly; /* Distribui os botões */
+  flex-wrap: wrap; /* Quebra linha se muitos botões */
+  max-width: 600px; /* Limita largura em telas muito grandes */
+}
+
+.action-btn {
+  min-width: 100px;
+  min-height: 50px;
+  font-size: 1rem;
+  flex-grow: 1;
+}
+.action-btn.primary { background-color: var(--primary-action-bg); color: #1a1a2e; }
+.action-btn.undo { background-color: var(--undo-action-bg); }
+.action-btn.reset { background-color: var(--reset-action-bg); }
+.action-btn.stats { background-color: var(--stats-action-bg); }
+.action-btn.export { background-color: var(--export-action-bg); }
+
+
+/* Modal Styles */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 100; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgba(0,0,0,0.8); /* Black w/ opacity */
+  padding: var(--gap);
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background-color: var(--panel-bg);
+  margin: var(--gap) auto; /* 15% from the top and centered */
+  padding: var(--gap);
+  border-radius: var(--radius);
+  width: 90%; /* Could be more responsive */
+  max-width: 700px;
+  box-shadow: var(--shadow);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.close-button {
+  color: var(--muted-text);
+  font-size: 2rem;
+  font-weight: bold;
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  cursor: pointer;
+}
+.close-button:hover,
+.close-button:focus {
+  color: var(--text-color);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.modal-content h2 {
+  text-align: center;
+  color: var(--lec-color);
+  margin-top: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: var(--gap);
+}
+
+.stats-chart-container {
+  background-color: var(--bg);
+  padding: var(--gap);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--gap) / 2);
+}
+.stats-chart-container h3 {
+  text-align: center;
+  color: var(--text-color);
+  margin: 0;
+  padding-bottom: calc(var(--gap) / 2);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.stats-export-options {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--gap);
+}
+.download-chart-btn {
+  background-color: var(--export-action-bg);
+  margin-top: calc(var(--gap) / 2);
+  padding: 8px 15px;
+  font-size: 0.9rem;
+  min-height: auto;
+}
+
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .main-layout {
+    grid-template-columns: 1fr; /* Pilha as colunas em telas menores */
+  }
+  .game-info {
+    flex-direction: column;
+    gap: calc(var(--gap) / 2);
+  }
+  .current-half-display, .score-display, .timer-display {
+    width: 100%;
+    text-align: center;
+  }
+  .timer-display { order: -1; } /* Mover timer para cima */
+}
+@media (max-width: 480px) {
+  .half-controls {
+    flex-wrap: wrap; /* Botões de tempo podem quebrar linha */
+  }
+  .half-btn {
+    flex-grow: 1;
+    max-width: none;
+  }
+  .bottom-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .action-btn {
+    min-width: 120px;
+  }
+}

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>FutTag Pro</title>
+
+  <!-- PWA Metadata -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#1a1a2e">
+  <link rel="apple-touch-icon" href="./icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FutTag">
+
+  <link rel="stylesheet" href="./styles.css" />
+  <!-- Chart.js para os gráficos de estatísticas -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Cabeçalho Principal: Tempo de Jogo, Placar e Cronômetro -->
+    <header class="game-header">
+      <div class="half-controls">
+        <button class="btn half-btn" data-half="1" data-action="start">INÍCIO 1°T</button>
+        <button class="btn half-btn" data-half="1" data-action="end">FINAL 1°T</button>
+        <button class="btn half-btn" data-half="2" data-action="start">INÍCIO 2°T</button>
+        <button class="btn half-btn" data-half="2" data-action="end">FINAL 2°T</button>
+      </div>
+      <div class="game-info">
+        <span class="current-half-display" id="currentHalfDisplay">1°T</span>
+        <span class="score-display">
+          <span id="scoreLec">0</span> - <span id="scoreAdv">0</span>
+        </span>
+        <span class="timer-display" id="timerDisplay">00:00</span>
+      </div>
+    </header>
+
+    <main class="main-layout">
+      <!-- Coluna LEC -->
+      <section class="team-column lec">
+        <h2 class="team-name">LEC</h2>
+
+        <!-- Finalizações LEC -->
+        <div class="action-group">
+          <h3 class="group-title">Finalizações</h3>
+          <div class="field-grid">
+            <button class="btn event-btn field-zone-btn zone-esq" data-code="FIN_LEC_ESQ">
+              Esquerda
+              <span class="count-badge" data-counter="FIN_LEC_ESQ">0</span>
+            </button>
+            <button class="btn event-btn field-zone-btn zone-ctr" data-code="FIN_LEC_CTR">
+              Centro
+              <span class="count-badge" data-counter="FIN_LEC_CTR">0</span>
+            </button>
+            <button class="btn event-btn field-zone-btn zone-dir" data-code="FIN_LEC_DIR">
+              Direita
+              <span class="count-badge" data-counter="FIN_LEC_DIR">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Entradas no Último Terço LEC -->
+        <div class="action-group">
+          <h3 class="group-title">Entradas no Último Terço</h3>
+          <div class="field-grid">
+            <button class="btn event-btn field-zone-btn zone-esq" data-code="ENT_LEC_ESQ">
+              Esquerda
+              <span class="count-badge" data-counter="ENT_LEC_ESQ">0</span>
+            </button>
+            <button class="btn event-btn field-zone-btn zone-ctr" data-code="ENT_LEC_CTR">
+              Centro
+              <span class="count-badge" data-counter="ENT_LEC_CTR">0</span>
+            </button>
+            <button class="btn event-btn field-zone-btn zone-dir" data-code="ENT_LEC_DIR">
+              Direita
+              <span class="count-badge" data-counter="ENT_LEC_DIR">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- GOL LEC -->
+        <div class="action-group gol-group">
+          <button class="btn event-btn gol-btn" data-code="GOL_LEC">
+            GOL LEC
+            <span class="count-badge" data-counter="GOL_LEC">0</span>
+          </button>
+        </div>
+
+        <!-- ESC OF / FALTA OF LEC -->
+        <div class="action-group side-actions-group">
+          <button class="btn event-btn side-btn esc-of" data-code="ESC_OF_LEC">
+            ESC OF
+            <span class="count-badge" data-counter="ESC_OF_LEC">0</span>
+          </button>
+          <button class="btn event-btn side-btn falta-of" data-code="FALTA_OF_LEC">
+            FL OF
+            <span class="count-badge" data-counter="FALTA_OF_LEC">0</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Coluna ADV -->
+      <section class="team-column adv">
+        <h2 class="team-name">ADV</h2>
+
+        <!-- Finalizações ADV -->
+        <div class="action-group">
+          <h3 class="group-title">Finalizações</h3>
+          <div class="field-grid">
+            <button class="btn event-btn field-zone-btn zone-esq" data-code="FIN_ADV_ESQ">
+              Esquerda
+              <span class="count-badge" data-counter="FIN_ADV_ESQ">0</span>
+            </button>
+            <button class="btn event-btn field-zone-btn zone-ctr" data-code="FIN_ADV_CTR">
+              Centro
+              <span class="count-badge" data-counter="FIN_ADV_CTR">0</span>
+            </button>
+            <button class="btn event-btn field-zone-btn zone-dir" data-code="FIN_ADV_DIR">
+              Direita
+              <span class="count-badge" data-counter="FIN_ADV_DIR">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Entradas no Último Terço ADV -->
+        <div class="action-group">
+          <h3 class="group-title">Entradas no Último Terço</h3>
+          <div class="field-grid">
+            <button class="btn event-btn field-zone-btn zone-esq" data-code="ENT_ADV_ESQ">
+              Esquerda
+              <span class="count-badge" data-counter="ENT_ADV_ESQ">0</span>
+            </button>
+            <button class="btn event-btn field-zone-btn zone-ctr" data-code="ENT_ADV_CTR">
+              Centro
+              <span class="count-badge" data-counter="ENT_ADV_CTR">0</span>
+            </button>
+            <button class="btn event-btn field-zone-btn zone-dir" data-code="ENT_ADV_DIR">
+              Direita
+              <span class="count-badge" data-counter="ENT_ADV_DIR">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- GOL ADV -->
+        <div class="action-group gol-group">
+          <button class="btn event-btn gol-btn" data-code="GOL_ADV">
+            GOL ADV
+            <span class="count-badge" data-counter="GOL_ADV">0</span>
+          </button>
+        </div>
+
+        <!-- ESC DEF / FALTA DEF ADV -->
+        <div class="action-group side-actions-group">
+          <button class="btn event-btn side-btn esc-def" data-code="ESC_DEF_ADV">
+            ESC DEF
+            <span class="count-badge" data-counter="ESC_DEF_ADV">0</span>
+          </button>
+          <button class="btn event-btn side-btn falta-def" data-code="FALTA_DEF_ADV">
+            FL DEF
+            <span class="count-badge" data-counter="FALTA_DEF_ADV">0</span>
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Barra inferior: Cronômetro e Controles -->
+    <footer class="bottom-bar">
+      <div class="bottom-buttons">
+        <button id="btnUndo" class="btn action-btn undo">Desfazer</button>
+        <button id="btnToggleTimer" class="btn action-btn primary">Iniciar</button>
+        <button id="btnResetAll" class="btn action-btn reset">Zerar Tudo</button>
+        <button id="btnShowStats" class="btn action-btn stats">Estatísticas</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Modal de Estatísticas -->
+  <div id="statsModal" class="modal">
+    <div class="modal-content">
+      <span class="close-button">&times;</span>
+      <h2>Estatísticas do Jogo</h2>
+      <div class="stats-chart-container">
+        <h3>Finalizações por Time</h3>
+        <canvas id="finChart"></canvas>
+        <button class="btn download-chart-btn" data-chart="finChart">Download Finalizações</button>
+      </div>
+      <div class="stats-chart-container">
+        <h3>Entradas no Último Terço por Time</h3>
+        <canvas id="entryChart"></canvas>
+        <button class="btn download-chart-btn" data-chart="entryChart">Download Entradas</button>
+      </div>
+      <div class="stats-chart-container">
+        <h3>Gols por Time</h3>
+        <canvas id="goalChart"></canvas>
+        <button class="btn download-chart-btn" data-chart="goalChart">Download Gols</button>
+      </div>
+      <div class="stats-export-options">
+        <button id="btnExportXML" class="btn action-btn export">Exportar XML</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js').catch(console.error);
+      });
+    }
+  </script>
+</body>
+</html>

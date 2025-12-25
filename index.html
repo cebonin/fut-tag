@@ -14,8 +14,12 @@
   <meta name="apple-mobile-web-app-title" content="FutTag">
 
   <link rel="stylesheet" href="./styles.css" />
-  <!-- Chart.js para os gráficos de estatísticas -->
+  <!-- Chart.js para os gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- jsPDF para gerar PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- html2canvas para converter canvas em imagem -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
   <div class="app-container">
@@ -46,15 +50,18 @@
           <h3 class="group-title">Finalizações</h3>
           <div class="field-grid">
             <button class="btn event-btn field-zone-btn zone-esq" data-code="FIN_LEC_ESQ">
-              Esquerda
+              <span class="btn-text-full">Esquerda</span>
+              <span class="btn-text-short">E</span>
               <span class="count-badge" data-counter="FIN_LEC_ESQ">0</span>
             </button>
             <button class="btn event-btn field-zone-btn zone-ctr" data-code="FIN_LEC_CTR">
-              Centro
+              <span class="btn-text-full">Centro</span>
+              <span class="btn-text-short">C</span>
               <span class="count-badge" data-counter="FIN_LEC_CTR">0</span>
             </button>
             <button class="btn event-btn field-zone-btn zone-dir" data-code="FIN_LEC_DIR">
-              Direita
+              <span class="btn-text-full">Direita</span>
+              <span class="btn-text-short">D</span>
               <span class="count-badge" data-counter="FIN_LEC_DIR">0</span>
             </button>
           </div>
@@ -62,41 +69,50 @@
 
         <!-- Entradas no Último Terço LEC -->
         <div class="action-group">
-          <h3 class="group-title">Entradas no Último Terço</h3>
+          <h3 class="group-title">Entradas Último Terço</h3>
           <div class="field-grid">
             <button class="btn event-btn field-zone-btn zone-esq" data-code="ENT_LEC_ESQ">
-              Esquerda
+              <span class="btn-text-full">Esquerda</span>
+              <span class="btn-text-short">E</span>
               <span class="count-badge" data-counter="ENT_LEC_ESQ">0</span>
             </button>
             <button class="btn event-btn field-zone-btn zone-ctr" data-code="ENT_LEC_CTR">
-              Centro
+              <span class="btn-text-full">Centro</span>
+              <span class="btn-text-short">C</span>
               <span class="count-badge" data-counter="ENT_LEC_CTR">0</span>
             </button>
             <button class="btn event-btn field-zone-btn zone-dir" data-code="ENT_LEC_DIR">
-              Direita
+              <span class="btn-text-full">Direita</span>
+              <span class="btn-text-short">D</span>
               <span class="count-badge" data-counter="ENT_LEC_DIR">0</span>
             </button>
           </div>
         </div>
 
-        <!-- GOL LEC -->
-        <div class="action-group gol-group">
-          <button class="btn event-btn gol-btn" data-code="GOL_LEC">
-            GOL LEC
-            <span class="count-badge" data-counter="GOL_LEC">0</span>
-          </button>
-        </div>
+        <!-- Segunda Coluna LEC -->
+        <div class="second-column">
+          <!-- GOL LEC -->
+          <div class="action-group gol-group">
+            <button class="btn event-btn gol-btn" data-code="GOL_LEC">
+              <span class="btn-text-full">GOL LEC</span>
+              <span class="btn-text-short">GOL</span>
+              <span class="count-badge" data-counter="GOL_LEC">0</span>
+            </button>
+          </div>
 
-        <!-- ESC OF / FALTA OF LEC -->
-        <div class="action-group side-actions-group">
-          <button class="btn event-btn side-btn esc-of" data-code="ESC_OF_LEC">
-            ESC OF
-            <span class="count-badge" data-counter="ESC_OF_LEC">0</span>
-          </button>
-          <button class="btn event-btn side-btn falta-of" data-code="FALTA_OF_LEC">
-            FL OF
-            <span class="count-badge" data-counter="FALTA_OF_LEC">0</span>
-          </button>
+          <!-- ESC OF / FALTA OF LEC -->
+          <div class="action-group side-actions-group">
+            <button class="btn event-btn side-btn esc-of" data-code="ESC_OF_LEC">
+              <span class="btn-text-full">ESC OF</span>
+              <span class="btn-text-short">ESC</span>
+              <span class="count-badge" data-counter="ESC_OF_LEC">0</span>
+            </button>
+            <button class="btn event-btn side-btn falta-of" data-code="FALTA_OF_LEC">
+              <span class="btn-text-full">FL OF</span>
+              <span class="btn-text-short">FL</span>
+              <span class="count-badge" data-counter="FALTA_OF_LEC">0</span>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -109,15 +125,18 @@
           <h3 class="group-title">Finalizações</h3>
           <div class="field-grid">
             <button class="btn event-btn field-zone-btn zone-esq" data-code="FIN_ADV_ESQ">
-              Esquerda
+              <span class="btn-text-full">Esquerda</span>
+              <span class="btn-text-short">E</span>
               <span class="count-badge" data-counter="FIN_ADV_ESQ">0</span>
             </button>
             <button class="btn event-btn field-zone-btn zone-ctr" data-code="FIN_ADV_CTR">
-              Centro
+              <span class="btn-text-full">Centro</span>
+              <span class="btn-text-short">C</span>
               <span class="count-badge" data-counter="FIN_ADV_CTR">0</span>
             </button>
             <button class="btn event-btn field-zone-btn zone-dir" data-code="FIN_ADV_DIR">
-              Direita
+              <span class="btn-text-full">Direita</span>
+              <span class="btn-text-short">D</span>
               <span class="count-badge" data-counter="FIN_ADV_DIR">0</span>
             </button>
           </div>
@@ -125,41 +144,50 @@
 
         <!-- Entradas no Último Terço ADV -->
         <div class="action-group">
-          <h3 class="group-title">Entradas no Último Terço</h3>
+          <h3 class="group-title">Entradas Último Terço</h3>
           <div class="field-grid">
             <button class="btn event-btn field-zone-btn zone-esq" data-code="ENT_ADV_ESQ">
-              Esquerda
+              <span class="btn-text-full">Esquerda</span>
+              <span class="btn-text-short">E</span>
               <span class="count-badge" data-counter="ENT_ADV_ESQ">0</span>
             </button>
             <button class="btn event-btn field-zone-btn zone-ctr" data-code="ENT_ADV_CTR">
-              Centro
+              <span class="btn-text-full">Centro</span>
+              <span class="btn-text-short">C</span>
               <span class="count-badge" data-counter="ENT_ADV_CTR">0</span>
             </button>
             <button class="btn event-btn field-zone-btn zone-dir" data-code="ENT_ADV_DIR">
-              Direita
+              <span class="btn-text-full">Direita</span>
+              <span class="btn-text-short">D</span>
               <span class="count-badge" data-counter="ENT_ADV_DIR">0</span>
             </button>
           </div>
         </div>
 
-        <!-- GOL ADV -->
-        <div class="action-group gol-group">
-          <button class="btn event-btn gol-btn" data-code="GOL_ADV">
-            GOL ADV
-            <span class="count-badge" data-counter="GOL_ADV">0</span>
-          </button>
-        </div>
+        <!-- Segunda Coluna ADV -->
+        <div class="second-column">
+          <!-- GOL ADV -->
+          <div class="action-group gol-group">
+            <button class="btn event-btn gol-btn" data-code="GOL_ADV">
+              <span class="btn-text-full">GOL ADV</span>
+              <span class="btn-text-short">GOL</span>
+              <span class="count-badge" data-counter="GOL_ADV">0</span>
+            </button>
+          </div>
 
-        <!-- ESC DEF / FALTA DEF ADV -->
-        <div class="action-group side-actions-group">
-          <button class="btn event-btn side-btn esc-def" data-code="ESC_DEF_ADV">
-            ESC DEF
-            <span class="count-badge" data-counter="ESC_DEF_ADV">0</span>
-          </button>
-          <button class="btn event-btn side-btn falta-def" data-code="FALTA_DEF_ADV">
-            FL DEF
-            <span class="count-badge" data-counter="FALTA_DEF_ADV">0</span>
-          </button>
+          <!-- ESC DEF / FALTA DEF ADV -->
+          <div class="action-group side-actions-group">
+            <button class="btn event-btn side-btn esc-def" data-code="ESC_DEF_ADV">
+              <span class="btn-text-full">ESC DEF</span>
+              <span class="btn-text-short">ESC</span>
+              <span class="count-badge" data-counter="ESC_DEF_ADV">0</span>
+            </button>
+            <button class="btn event-btn side-btn falta-def" data-code="FALTA_DEF_ADV">
+              <span class="btn-text-full">FL DEF</span>
+              <span class="btn-text-short">FL</span>
+              <span class="count-badge" data-counter="FALTA_DEF_ADV">0</span>
+            </button>
+          </div>
         </div>
       </section>
     </main>
@@ -167,10 +195,19 @@
     <!-- Barra inferior: Cronômetro e Controles -->
     <footer class="bottom-bar">
       <div class="bottom-buttons">
-        <button id="btnUndo" class="btn action-btn undo">Desfazer</button>
+        <button id="btnUndo" class="btn action-btn undo">
+          <span class="btn-text-full">Desfazer</span>
+          <span class="btn-text-short">Undo</span>
+        </button>
         <button id="btnToggleTimer" class="btn action-btn primary">Iniciar</button>
-        <button id="btnResetAll" class="btn action-btn reset">Zerar Tudo</button>
-        <button id="btnShowStats" class="btn action-btn stats">Estatísticas</button>
+        <button id="btnResetAll" class="btn action-btn reset">
+          <span class="btn-text-full">Zerar Tudo</span>
+          <span class="btn-text-short">Reset</span>
+        </button>
+        <button id="btnShowStats" class="btn action-btn stats">
+          <span class="btn-text-full">Estatísticas</span>
+          <span class="btn-text-short">Stats</span>
+        </button>
       </div>
     </footer>
   </div>
@@ -180,23 +217,79 @@
     <div class="modal-content">
       <span class="close-button">&times;</span>
       <h2>Estatísticas do Jogo</h2>
-      <div class="stats-chart-container">
-        <h3>Finalizações por Time</h3>
-        <canvas id="finChart"></canvas>
-        <button class="btn download-chart-btn" data-chart="finChart">Download Finalizações</button>
+      
+      <!-- Container para gráficos temporários (não visíveis) -->
+      <div id="chartsContainer" style="display: none;">
+        <!-- Finalizações -->
+        <div class="hidden-chart-group">
+          <h3>Finalizações - 1° Tempo</h3>
+          <canvas id="fin1TChart" width="400" height="300"></canvas>
+        </div>
+        <div class="hidden-chart-group">
+          <h3>Finalizações - 2° Tempo</h3>
+          <canvas id="fin2TChart" width="400" height="300"></canvas>
+        </div>
+        <div class="hidden-chart-group">
+          <h3>Finalizações - Total</h3>
+          <canvas id="finTotalChart" width="400" height="300"></canvas>
+        </div>
+        
+        <!-- Entradas -->
+        <div class="hidden-chart-group">
+          <h3>Entradas no Último Terço - 1° Tempo</h3>
+          <canvas id="ent1TChart" width="400" height="300"></canvas>
+        </div>
+        <div class="hidden-chart-group">
+          <h3>Entradas no Último Terço - 2° Tempo</h3>
+          <canvas id="ent2TChart" width="400" height="300"></canvas>
+        </div>
+        <div class="hidden-chart-group">
+          <h3>Entradas no Último Terço - Total</h3>
+          <canvas id="entTotalChart" width="400" height="300"></canvas>
+        </div>
+        
+        <!-- Escanteios -->
+        <div class="hidden-chart-group">
+          <h3>Escanteios - 1° Tempo</h3>
+          <canvas id="esc1TChart" width="400" height="300"></canvas>
+        </div>
+        <div class="hidden-chart-group">
+          <h3>Escanteios - 2° Tempo</h3>
+          <canvas id="esc2TChart" width="400" height="300"></canvas>
+        </div>
+        <div class="hidden-chart-group">
+          <h3>Escanteios - Total</h3>
+          <canvas id="escTotalChart" width="400" height="300"></canvas>
+        </div>
+        
+        <!-- Faltas -->
+        <div class="hidden-chart-group">
+          <h3>Faltas Laterais - 1° Tempo</h3>
+          <canvas id="falta1TChart" width="400" height="300"></canvas>
+        </div>
+        <div class="hidden-chart-group">
+          <h3>Faltas Laterais - 2° Tempo</h3>
+          <canvas id="falta2TChart" width="400" height="300"></canvas>
+        </div>
+        <div class="hidden-chart-group">
+          <h3>Faltas Laterais - Total</h3>
+          <canvas id="faltaTotalChart" width="400" height="300"></canvas>
+        </div>
       </div>
-      <div class="stats-chart-container">
-        <h3>Entradas no Último Terço por Time</h3>
-        <canvas id="entryChart"></canvas>
-        <button class="btn download-chart-btn" data-chart="entryChart">Download Entradas</button>
+
+      <div class="stats-preview">
+        <p>📊 O relatório será gerado com <strong>12 gráficos</strong> organizados por tempo.</p>
+        <ul class="stats-summary">
+          <li><strong>Finalizações:</strong> <span id="finSummary">-</span></li>
+          <li><strong>Entradas no Último Terço:</strong> <span id="entSummary">-</span></li>
+          <li><strong>Escanteios:</strong> <span id="escSummary">-</span></li>
+          <li><strong>Faltas Laterais:</strong> <span id="faltaSummary">-</span></li>
+        </ul>
       </div>
-      <div class="stats-chart-container">
-        <h3>Gols por Time</h3>
-        <canvas id="goalChart"></canvas>
-        <button class="btn download-chart-btn" data-chart="goalChart">Download Gols</button>
-      </div>
+      
       <div class="stats-export-options">
-        <button id="btnExportXML" class="btn action-btn export">Exportar XML</button>
+        <button id="btnGeneratePDF" class="btn action-btn export">📄 Gerar Relatório PDF</button>
+        <button id="btnExportXML" class="btn action-btn export">📁 Exportar XML</button>
       </div>
     </div>
   </div>

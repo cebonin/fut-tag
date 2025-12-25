@@ -7,7 +7,7 @@
   --lec-color: #00bcd4; /* Ciano para LEC */
   --adv-color: #ff9800; /* Laranja para ADV */
 
-  --btn-default-bg: #333; /* Cor base para a maioria dos botões */
+  --btn-default-bg: #333;
 
   --btn-fin-bg: #4caf50; /* Verde intenso para Finalizações */
   --btn-entry-bg: #9c27b0; /* Roxo para Entradas */
@@ -25,9 +25,9 @@
   --stats-action-bg: #673ab7; /* Roxo escuro para stats */
   --export-action-bg: #009688; /* Verde água para exportar */
 
-  --gap: 12px;
-  --radius: 12px;
-  --shadow: 0 4px 8px rgba(0,0,0,0.2);
+  --gap: 8px;
+  --radius: 10px;
+  --shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
 /* Base Reset & Globals */
@@ -37,11 +37,11 @@ body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
   color: var(--text-color);
   background-color: var(--bg);
-  overflow: hidden; /* Evita rolagem do body principal */
+  overflow: hidden; /* Evita rolagem no body */
 }
 
 .app-container {
-  min-height: 100dvh; /* Usa a altura dinâmica da viewport */
+  height: 100dvh; /* Altura fixa da viewport */
   display: flex;
   flex-direction: column;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
@@ -56,6 +56,7 @@ body {
   flex-direction: column;
   gap: var(--gap);
   align-items: center;
+  flex-shrink: 0; /* Não encolhe */
 }
 
 .half-controls {
@@ -68,11 +69,12 @@ body {
 .half-btn {
   background-color: var(--btn-default-bg);
   color: var(--text-color);
-  font-size: 0.85rem;
-  padding: 8px 10px;
-  border-radius: 8px;
+  font-size: 0.75rem;
+  padding: 6px 8px;
+  border-radius: 6px;
   flex-grow: 1;
-  max-width: 120px;
+  max-width: 100px;
+  min-height: 35px;
 }
 .half-btn.active {
   background-color: var(--half-btn-active-bg);
@@ -85,43 +87,44 @@ body {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  max-width: 400px; /* Limita a largura em telas muito largas */
-  font-size: 1.5rem;
+  max-width: 350px;
+  font-size: 1.2rem;
   font-weight: 700;
 }
 
 .current-half-display {
   color: var(--half-btn-active-bg);
-  min-width: 50px;
+  min-width: 40px;
   text-align: left;
+  font-size: 1rem;
 }
 
 .score-display {
   flex-grow: 1;
   text-align: center;
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 900;
   letter-spacing: 0.05em;
 }
 
 .timer-display {
-  font-size: 1.8rem;
+  font-size: 1.2rem;
   font-weight: 800;
   letter-spacing: 0.05em;
   font-variant-numeric: tabular-nums;
-  min-width: 80px;
+  min-width: 60px;
   text-align: right;
 }
 
-
-/* Main Layout (Two Columns) */
+/* Main Layout */
 .main-layout {
   flex-grow: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--gap);
   padding: var(--gap);
-  overflow-y: auto; /* Permite rolagem se o conteúdo exceder a altura */
+  overflow: hidden; /* Remove rolagem */
+  min-height: 0; /* Permite que o grid encolha */
 }
 
 /* Team Column */
@@ -129,18 +132,20 @@ body {
   background-color: var(--panel-bg);
   border-radius: var(--radius);
   padding: var(--gap);
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr 1fr auto; /* Header, Fin, Ent, Second Column */
   gap: var(--gap);
+  min-height: 0; /* Permite que encolha */
 }
 
 .team-name {
   text-align: center;
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  margin: 0 0 var(--gap) 0;
+  margin: 0;
   padding-bottom: var(--gap);
   border-bottom: 1px solid rgba(255,255,255,0.1);
+  grid-row: 1;
 }
 .team-column.lec .team-name { color: var(--lec-color); }
 .team-column.adv .team-name { color: var(--adv-color); }
@@ -149,15 +154,25 @@ body {
 .action-group {
   display: flex;
   flex-direction: column;
-  gap: var(--gap);
-  flex-grow: 1;
+  gap: calc(var(--gap) / 2);
+  min-height: 0; /* Permite encolhimento */
 }
+
 .group-title {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   color: var(--muted-text);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  text-align: center;
+}
+
+/* Segunda coluna (GOL + ESC/FL) */
+.second-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  grid-row: 4;
 }
 
 /* Buttons Base Style */
@@ -165,121 +180,110 @@ body {
   border: none;
   border-radius: var(--radius);
   color: var(--text-color);
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
-  transition: transform 0.1s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.1s ease, background-color 0.2s ease;
   box-shadow: var(--shadow);
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  position: relative; /* For badge positioning */
+  position: relative;
   padding: var(--gap);
-  background-color: var(--btn-default-bg); /* Cor padrão para botões */
+  background-color: var(--btn-default-bg);
+  font-size: 0.9rem;
 }
-.btn:active { transform: scale(0.98); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+.btn:active { transform: scale(0.98); }
 
 /* Event Buttons */
 .event-btn {
-  font-size: 1.1rem;
-  min-height: 70px; /* Altura padrão para eventos */
+  min-height: 50px; /* Altura reduzida para mobile */
 }
 
-/* Field Grid Buttons (Finalizações, Entradas) */
+/* Text Responsive (Desktop vs Mobile) */
+.btn-text-short { display: none; } /* Escondido por padrão */
+.btn-text-full { display: inline; } /* Visível por padrão */
+
+/* Field Grid Buttons */
 .field-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: calc(var(--gap) / 2); /* Gap menor entre zonas do campo */
+  gap: 4px; /* Gap muito pequeno */
   flex-grow: 1;
-  background-image: url('data:image/svg+xml;utf8,<svg width="100%" height="100%" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="0.5" width="99" height="99" stroke="%23333"/><rect x="0.5" y="25.5" width="25" height="49" stroke="%23333"/><rect x="74.5" y="25.5" width="25" height="49" stroke="%23333"/><rect x="0.5" y="40.5" width="10" height="19" stroke="%23333"/><rect x="89.5" y="40.5" width="10" height="19" stroke="%23333"/><circle cx="50" cy="50" r="10" stroke="%23333"/><circle cx="50" cy="50" r="1" fill="%23333"/><line x1="50" y1="0" x2="50" y2="100" stroke="%23333"/><line x1="0" y1="20" x2="100" y2="20" stroke="%23333"/><line x1="0" y1="80" x2="100" y2="80" stroke="%23333"/></svg>');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  padding: 5px; /* Para não sobrepor a imagem de fundo */
-  border-radius: var(--radius);
-  border: 1px solid rgba(255,255,255,0.1);
+  min-height: 0;
 }
 
 .field-zone-btn {
-  min-height: 80px;
-  background-color: rgba(0, 0, 0, 0.4); /* Botões semi-transparentes sobre o campo */
-  color: var(--text-color);
-  font-size: 0.9rem;
-  padding: var(--gap) calc(var(--gap) / 2);
+  min-height: 45px;
+  font-size: 0.8rem;
+  padding: 4px;
 }
-.action-group:nth-of-type(1) .field-zone-btn { background-color: var(--btn-fin-bg); } /* Finalizações */
-.action-group:nth-of-type(2) .field-zone-btn { background-color: var(--btn-entry-bg); } /* Entradas */
+
+.action-group:nth-of-type(1) .field-zone-btn { background-color: var(--btn-fin-bg); }
+.action-group:nth-of-type(2) .field-zone-btn { background-color: var(--btn-entry-bg); }
 
 /* Gol Buttons */
-.gol-group {
-  margin-top: var(--gap);
-}
 .gol-btn {
   background-color: var(--btn-gol-bg);
-  min-height: 100px;
-  font-size: 1.3rem;
+  min-height: 50px;
+  font-size: 1rem;
+  font-weight: 700;
 }
 
-/* Side Action Buttons (ESC, FL) */
+/* Side Action Buttons */
 .side-actions-group {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--gap);
-  margin-top: var(--gap);
+  gap: calc(var(--gap) / 2);
 }
 .side-btn {
-  min-height: 70px;
-  font-size: 1rem;
+  min-height: 45px;
+  font-size: 0.8rem;
 }
 .esc-of, .esc-def { background-color: var(--btn-esc-bg); }
 .falta-of, .falta-def { background-color: var(--btn-falta-bg); }
 
-
 /* Count Badges */
 .count-badge {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  background-color: rgba(0,0,0,0.4);
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.8rem;
+  top: 4px;
+  right: 4px;
+  background-color: rgba(0,0,0,0.6);
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 0.7rem;
   font-weight: 700;
-  min-width: 30px;
+  min-width: 20px;
   text-align: center;
-  line-height: 1; /* Centraliza o texto verticalmente */
+  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Bottom Bar (Controls) */
+/* Bottom Bar */
 .bottom-bar {
   background-color: var(--panel-bg);
-  padding: var(--gap) calc(env(safe-area-inset-right) + var(--gap)) calc(env(safe-area-inset-bottom) + var(--gap)) calc(env(safe-area-inset-left) + var(--gap));
+  padding: var(--gap);
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: var(--gap);
   border-top: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 -4px 8px rgba(0,0,0,0.2);
-  z-index: 10;
+  flex-shrink: 0; /* Não encolhe */
 }
 
 .bottom-buttons {
   display: flex;
-  flex-grow: 1;
   gap: var(--gap);
-  justify-content: space-evenly; /* Distribui os botões */
-  flex-wrap: wrap; /* Quebra linha se muitos botões */
-  max-width: 600px; /* Limita largura em telas muito grandes */
+  width: 100%;
+  max-width: 500px;
 }
 
 .action-btn {
-  min-width: 100px;
-  min-height: 50px;
-  font-size: 1rem;
+  min-height: 45px;
+  font-size: 0.9rem;
   flex-grow: 1;
+  min-width: 80px;
 }
 .action-btn.primary { background-color: var(--primary-action-bg); color: #1a1a2e; }
 .action-btn.undo { background-color: var(--undo-action-bg); }
@@ -287,62 +291,46 @@ body {
 .action-btn.stats { background-color: var(--stats-action-bg); }
 .action-btn.export { background-color: var(--export-action-bg); }
 
-
 /* Modal Styles */
 .modal {
-  display: none; /* Hidden by default */
-  position: fixed; /* Stay in place */
-  z-index: 100; /* Sit on top */
+  display: none;
+  position: fixed;
+  z-index: 100;
   left: 0;
   top: 0;
-  width: 100%; /* Full width */
-  height: 100%; /* Full height */
-  overflow: auto; /* Enable scroll if needed */
-  background-color: rgba(0,0,0,0.8); /* Black w/ opacity */
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.9);
   padding: var(--gap);
-  animation: fadeIn 0.3s ease-out forwards;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 .modal-content {
   background-color: var(--panel-bg);
-  margin: var(--gap) auto; /* 15% from the top and centered */
+  margin: var(--gap) auto;
   padding: var(--gap);
   border-radius: var(--radius);
-  width: 90%; /* Could be more responsive */
-  max-width: 700px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
   box-shadow: var(--shadow);
   position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--gap);
-  animation: slideIn 0.3s ease-out forwards;
-}
-
-@keyframes slideIn {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
 }
 
 .close-button {
   color: var(--muted-text);
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: bold;
   position: absolute;
   top: 10px;
-  right: 20px;
+  right: 15px;
   cursor: pointer;
 }
-.close-button:hover,
-.close-button:focus {
-  color: var(--text-color);
-  text-decoration: none;
-  cursor: pointer;
-}
+.close-button:hover { color: var(--text-color); }
 
 .modal-content h2 {
   text-align: center;
@@ -352,63 +340,138 @@ body {
   padding-bottom: var(--gap);
 }
 
-.stats-chart-container {
+.stats-preview {
   background-color: var(--bg);
   padding: var(--gap);
   border-radius: var(--radius);
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--gap) / 2);
-}
-.stats-chart-container h3 {
   text-align: center;
-  color: var(--text-color);
-  margin: 0;
-  padding-bottom: calc(var(--gap) / 2);
+}
+
+.stats-summary {
+  list-style: none;
+  padding: 0;
+  margin: var(--gap) 0 0 0;
+}
+.stats-summary li {
+  padding: 4px 0;
   border-bottom: 1px solid rgba(255,255,255,0.05);
 }
+
 .stats-export-options {
   display: flex;
+  gap: var(--gap);
   justify-content: center;
-  margin-top: var(--gap);
-}
-.download-chart-btn {
-  background-color: var(--export-action-bg);
-  margin-top: calc(var(--gap) / 2);
-  padding: 8px 15px;
-  font-size: 0.9rem;
-  min-height: auto;
 }
 
+.hidden-chart-group {
+  margin-bottom: 20px;
+}
+.hidden-chart-group h3 {
+  text-align: center;
+  color: var(--text-color);
+  margin-bottom: 10px;
+}
 
-/* Responsividade */
+/* Responsividade para Mobile */
 @media (max-width: 768px) {
-  .main-layout {
-    grid-template-columns: 1fr; /* Pilha as colunas em telas menores */
+  :root {
+    --gap: 6px;
+    --radius: 8px;
   }
+  
+  /* Mostra texto curto e esconde texto longo */
+  .btn-text-full { display: none; }
+  .btn-text-short { display: inline; }
+  
+  /* Ajustes no cabeçalho */
   .game-info {
-    flex-direction: column;
-    gap: calc(var(--gap) / 2);
+    font-size: 1rem;
   }
-  .current-half-display, .score-display, .timer-display {
-    width: 100%;
-    text-align: center;
+  .score-display {
+    font-size: 1.5rem;
   }
-  .timer-display { order: -1; } /* Mover timer para cima */
+  .timer-display {
+    font-size: 1rem;
+  }
+  .current-half-display {
+    font-size: 0.9rem;
+  }
+  
+  /* Ajustes nos botões */
+  .event-btn {
+    min-height: 40px;
+    font-size: 0.75rem;
+  }
+  .field-zone-btn {
+    min-height: 38px;
+    font-size: 0.7rem;
+  }
+  .gol-btn {
+    min-height: 42px;
+    font-size: 0.85rem;
+  }
+  .side-btn {
+    min-height: 38px;
+    font-size: 0.7rem;
+  }
+  
+  /* Badges menores */
+  .count-badge {
+    padding: 1px 4px;
+    font-size: 0.6rem;
+    min-width: 16px;
+  }
+  
+  /* Bottom bar */
+  .action-btn {
+    min-height: 40px;
+    font-size: 0.75rem;
+    min-width: 60px;
+  }
+  
+  /* Team names menores */
+  .team-name {
+    font-size: 1rem;
+  }
+  .group-title {
+    font-size: 0.6rem;
+  }
 }
+
 @media (max-width: 480px) {
   .half-controls {
-    flex-wrap: wrap; /* Botões de tempo podem quebrar linha */
+    flex-wrap: wrap;
   }
   .half-btn {
-    flex-grow: 1;
-    max-width: none;
+    font-size: 0.65rem;
+    padding: 4px 6px;
+    min-height: 30px;
   }
-  .bottom-buttons {
+  
+  .modal-content {
+    width: 95%;
+    max-height: 85vh;
+  }
+  
+  .stats-export-options {
     flex-direction: column;
-    align-items: stretch;
   }
-  .action-btn {
-    min-width: 120px;
+}
+
+/* Landscape Mobile Optimization */
+@media (max-width: 896px) and (orientation: landscape) {
+  .game-header {
+    padding: 4px var(--gap);
+  }
+  .half-btn {
+    font-size: 0.6rem;
+    padding: 2px 4px;
+    min-height: 25px;
+  }
+  .game-info {
+    font-size: 0.9rem;
+  }
+  .score-display {
+    font-size: 1.3rem;
   }
 }

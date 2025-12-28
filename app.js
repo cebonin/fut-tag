@@ -1,1460 +1,1375 @@
-// ======================================================
-// FutTag Pro - app.js v3.2 - Proteção Beta Simplificada
-// Developed by Carlos Bonin
-// ======================================================
+// ***** FUTTAG PRO v3.2 BETA - SISTEMA DE ANÁLISE ESPORTIVA EM TEMPO REAL *****
+// Desenvolvido por Carlos Bonin - Juega10
+// Data: Dezembro 2024
+// ****************************************************************************
 
-// ==================== CONFIGURAÇÕES DE PROTEÇÃO ====================
+// ***** CONFIGURAÇÃO DE PROTEÇÃO BETA *****
 const BETA_CONFIG = {
-  // Códigos de acesso beta (fácil de alterar)
-  validCodes: [
-    'BONIN2025',      // Código principal
-    'ANALYST01',      // Analista 1
-    'ANALYST02',      // Analista 2
-    'ANALYST03',      // Analista 3
-    'SCOUT2025',      // Scout
-    'COACH2025',      // Treinador
-    'BETA2025'        // Código geral
-  ],
-  
-  // Data de expiração (fácil de alterar)
-  expirationDate: '2025-03-31',
-  
-  // Informações de contato
-  contact: {
-    email: 'bonin@futtagpro.com',
-    whatsapp: '(92) 99999-9999'
-  }
-};
-
-// ==================== APLICATIVO DE ESTADO ====================
-const appState = {
-  score: {
-    home: 0,
-    away: 0
-  },
-  currentHalf: 1,
-  timer: {
-    isRunning: false,
-    startEpoch: 0,
-    elapsedMs: 0,
-    rafId: null
-  },
-  events: [],
-  eventCounts: {
-    total: {},
-    half1: {},
-    half2: {}
-  },
-  lastAction: null,
-  teamNames: {
-    home: 'CASA',
-    away: 'VISITANTE'
-  },
-  
-  // Dados de proteção
-  beta: {
-    accessCode: null,
-    isValid: false,
-    firstAccess: null,
-    analytics: {
-      gamesPlayed: 0,
-      pdfsGenerated: 0,
-      xmlsExported: 0,
-      feedbacksSent: 0,
-      lastUsed: null
+    enabled: true,
+    expirationDate: '2026-03-31', // ✅ CORRIGIDO: 2026
+    users: { // ✅ NOVO: Sistema de usuários
+        'BONIN2025': 'futpro123',
+        'ANALYST01': 'scout2025',
+        'ANALYST02': 'data2025',
+        'ANALYST03': 'stats2025',
+        'SCOUT2025': 'field2025',
+        'COACH2025': 'tactic25',
+        'BETA2025': 'test2025'
     }
-  }
 };
 
-// ==================== SELETORES DE DOM ====================
-const timerDisplay = document.getElementById('timerDisplay');
-const scoreHomeDisplay = document.getElementById('homeScore');
-const scoreAwayDisplay = document.getElementById('awayScore');
-const currentHalfDisplay = document.getElementById('currentHalfDisplay');
+// ***** VARIÁVEIS GLOBAIS *****
+let gameData = {
+    homeTeam: 'CASA',
+    awayTeam: 'VISITANTE',
+    homeScore: 0,
+    awayScore: 0,
+    currentHalf: 1,
+    timerRunning: false,
+    startTime: 0,
+    elapsedTime: 0,
+    events: [],
+    stats: {
+        home: { fin_e: 0, fin_c: 0, fin_d: 0, ent_e: 0, ent_c: 0, ent_d: 0, gols: 0, esc: 0, falta: 0 },
+        away: { fin_e: 0, fin_c: 0, fin_d: 0, ent_e: 0, ent_c: 0, ent_d: 0, gols: 0, esc: 0, falta: 0 }
+    }
+};
 
-const btnToggleTimer = document.getElementById('btnToggleTimer');
-const btnResetAll = document.getElementById('btnResetAll');
-const btnUndo = document.getElementById('btnUndo');
-const btnShowStats = document.getElementById('btnShowStats');
-const btnTeamConfig = document.getElementById('btnTeamConfig');
+let analytics = {
+    sessionsCount: parseInt(localStorage.getItem('futtag_sessions') || '0'),
+    appOpens: parseInt(localStorage.getItem('futtag_opens') || '0')
+};
 
-// Modal de acesso beta
-const betaAccessModal = document.getElementById('betaAccessModal');
-const betaCodeInput = document.getElementById('betaCodeInput');
-const btnValidateBeta = document.getElementById('btnValidateBeta');
+// ***** CONFIGURAÇÃO DE GRÁFICOS *****
+let currentStatsPage = 1;
+const TOTAL_STATS_PAGES = 3;
+let chartsInitialized = false;
+let chartInstances = {};
 
-// Modal de configuração das equipes
-const teamConfigModal = document.getElementById('teamConfigModal');
-const teamConfigClose = document.getElementById('teamConfigClose');
-const homeTeamInput = document.getElementById('homeTeamInput');
-const awayTeamInput = document.getElementById('awayTeamInput');
-const btnSaveTeamConfig = document.getElementById('btnSaveTeamConfig');
-const btnResetTeamConfig = document.getElementById('btnResetTeamConfig');
+// ***** INICIALIZAÇÃO *****
+document.addEventListener('DOMContentLoaded', function() {
+    analytics.appOpens++;
+    localStorage.setItem('futtag_opens', analytics.appOpens.toString());
+    
+    // ✅ CORRIGIDO: Verificação de acesso beta
+    if (!checkBetaAccess()) {
+        showBetaAccessModal();
+        return;
+    }
+    
+    initializeApp();
+});
 
-// Nomes das equipes na interface
-const homeTeamName = document.getElementById('homeTeamName');
-const awayTeamName = document.getElementById('awayTeamName');
-
-// Modal de estatísticas
-const statsModal = document.getElementById('statsModal');
-const closeButton = document.querySelector('#statsModal .close-button');
-const btnGeneratePDF = document.getElementById('btnGeneratePDF');
-const btnExportXML = document.getElementById('btnExportXML');
-const btnSendFeedback = document.getElementById('btnSendFeedback');
-
-// Modal de feedback
-const feedbackModal = document.getElementById('feedbackModal');
-const feedbackClose = document.getElementById('feedbackClose');
-const feedbackName = document.getElementById('feedbackName');
-const feedbackType = document.getElementById('feedbackType');
-const feedbackMessage = document.getElementById('feedbackMessage');
-const btnSubmitFeedback = document.getElementById('btnSubmitFeedback');
-const btnCancelFeedback = document.getElementById('btnCancelFeedback');
-
-// Summary elements
-const finSummary = document.getElementById('finSummary');
-const entSummary = document.getElementById('entSummary');
-const escSummary = document.getElementById('escSummary');
-const faltaSummary = document.getElementById('faltaSummary');
-
-// ==================== DEFINIÇÕES DE EVENTOS ====================
-const ALL_EVENT_CODES = [
-  'FIN_HOME_ESQ', 'FIN_HOME_CTR', 'FIN_HOME_DIR',
-  'ENT_HOME_ESQ', 'ENT_HOME_CTR', 'ENT_HOME_DIR',
-  'GOL_HOME', 'ESC_OF_HOME', 'FALTA_OF_HOME',
-
-  'FIN_AWAY_ESQ', 'FIN_AWAY_CTR', 'FIN_AWAY_DIR',
-  'ENT_AWAY_ESQ', 'ENT_AWAY_CTR', 'ENT_AWAY_DIR',
-  'GOL_AWAY', 'ESC_DEF_AWAY', 'FALTA_DEF_AWAY'
-];
-
-// ==================== SISTEMA DE PROTEÇÃO BETA ====================
-
-function checkBetaExpiration() {
-  const today = new Date();
-  const expiration = new Date(BETA_CONFIG.expirationDate);
-  
-  if (today > expiration) {
-    alert(`⚠️ Esta versão beta expirou em ${expiration.toLocaleDateString('pt-BR')}.\n\nPara continuar usando o FutTag Pro, entre em contato:\n📧 ${BETA_CONFIG.contact.email}\n📱 ${BETA_CONFIG.contact.whatsapp}`);
-    return false;
-  }
-  return true;
-}
-
-function loadBetaAccess() {
-  try {
-    const savedBeta = localStorage.getItem('futtag_beta_access');
-    if (savedBeta) {
-      const betaData = JSON.parse(savedBeta);
-      appState.beta = { ...appState.beta, ...betaData };
-      
-      // Verifica se o código ainda é válido
-      if (BETA_CONFIG.validCodes.includes(appState.beta.accessCode)) {
-        appState.beta.isValid = true;
+// ***** FUNÇÕES DE PROTEÇÃO BETA *****
+function checkBetaAccess() {
+    if (!BETA_CONFIG.enabled) return true;
+    
+    // ✅ CORRIGIDO: Verificar expiração
+    const now = new Date();
+    const expirationDate = new Date(BETA_CONFIG.expirationDate);
+    if (now > expirationDate) {
+        alert('❌ Versão Beta expirada!\n\nData limite: ' + expirationDate.toLocaleDateString('pt-BR') + 
+              '\n\nContate: carlos@juega10.com.br');
+        return false;
+    }
+    
+    // Verificar se usuário já validado
+    const validatedUser = localStorage.getItem('futtag_beta_user');
+    const validatedCode = localStorage.getItem('futtag_beta_code');
+    
+    if (validatedUser && validatedCode && BETA_CONFIG.users[validatedCode] === validatedUser) {
         return true;
-      }
     }
-  } catch (error) {
-    console.warn('Erro ao carregar acesso beta:', error);
-  }
-  
-  appState.beta.isValid = false;
-  return false;
-}
-
-function saveBetaAccess() {
-  try {
-    localStorage.setItem('futtag_beta_access', JSON.stringify(appState.beta));
-  } catch (error) {
-    console.warn('Erro ao salvar acesso beta:', error);
-  }
-}
-
-function validateBetaCode() {
-  const inputCode = betaCodeInput.value.trim().toUpperCase();
-  
-  if (!inputCode) {
-    alert('⚠️ Por favor, digite um código de acesso.');
-    return;
-  }
-  
-  if (BETA_CONFIG.validCodes.includes(inputCode)) {
-    // Código válido
-    appState.beta.accessCode = inputCode;
-    appState.beta.isValid = true;
-    appState.beta.firstAccess = new Date().toISOString();
-    appState.beta.analytics.lastUsed = new Date().toISOString();
     
-    saveBetaAccess();
-    hideBetaAccessModal();
-    
-    triggerHapticFeedback();
-    alert('✅ Acesso liberado! Bem-vindo ao FutTag Pro Beta 2025.\n\n🔥 Aproveite para testar todas as funcionalidades!');
-    
-    // Analytics: registra primeiro acesso
-    updateAnalytics('firstAccess');
-    
-  } else {
-    alert('❌ Código inválido.\n\nVerifique o código fornecido ou entre em contato:\n📧 ' + BETA_CONFIG.contact.email);
-    betaCodeInput.value = '';
-    betaCodeInput.focus();
-  }
+    return false;
 }
 
 function showBetaAccessModal() {
-  if (betaAccessModal) {
-    betaAccessModal.style.display = 'block';
-    if (betaCodeInput) betaCodeInput.focus();
-  }
+    const modal = document.getElementById('betaAccessModal');
+    modal.style.display = 'block';
 }
 
-function hideBetaAccessModal() {
-  if (betaAccessModal) {
-    betaAccessModal.style.display = 'none';
-  }
-}
-
-function updateAnalytics(action) {
-  const analytics = appState.beta.analytics;
-  analytics.lastUsed = new Date().toISOString();
-  
-  switch (action) {
-    case 'gameStarted':
-      analytics.gamesPlayed++;
-      break;
-    case 'pdfGenerated':
-      analytics.pdfsGenerated++;
-      break;
-    case 'xmlExported':
-      analytics.xmlsExported++;
-      break;
-    case 'feedbackSent':
-      analytics.feedbacksSent++;
-      break;
-  }
-  
-  saveBetaAccess();
-  
-  // Log para debug (remover em produção)
-  console.log('📊 Analytics updated:', action, analytics);
-}
-
-// ==================== SISTEMA DE FEEDBACK ====================
-
-let selectedRating = 0;
-
-function setupRatingButtons() {
-  const ratingButtons = document.querySelectorAll('.rating-btn');
-  ratingButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      // Remove seleção anterior
-      ratingButtons.forEach(b => b.classList.remove('selected'));
-      
-      // Adiciona seleção atual
-      btn.classList.add('selected');
-      selectedRating = parseInt(btn.dataset.rating);
-    });
-  });
-}
-
-function showFeedbackModal() {
-  triggerHapticFeedback();
-  if (feedbackModal) {
-    // Pre-preenche com dados do usuário
-    if (feedbackName && appState.beta.accessCode) {
-      feedbackName.value = `Usuário ${appState.beta.accessCode}`;
+function validateBetaAccess() {
+    const userInput = document.getElementById('betaUser').value.trim();
+    const codeInput = document.getElementById('betaCode').value.trim().toUpperCase();
+    
+    // ✅ CORRIGIDO: Validação usuário + código
+    if (!userInput) {
+        alert('❌ Digite seu nome/email');
+        return;
     }
     
-    feedbackModal.style.display = 'block';
-  }
+    if (!codeInput) {
+        alert('❌ Digite o código de acesso');
+        return;
+    }
+    
+    if (!BETA_CONFIG.users[codeInput]) {
+        alert('❌ Código de acesso inválido');
+        return;
+    }
+    
+    if (BETA_CONFIG.users[codeInput] !== userInput) {
+        alert('❌ Usuário não autorizado para este código');
+        return;
+    }
+    
+    // Salvar validação
+    localStorage.setItem('futtag_beta_user', userInput);
+    localStorage.setItem('futtag_beta_code', codeInput);
+    
+    // Fechar modal e inicializar
+    document.getElementById('betaAccessModal').style.display = 'none';
+    initializeApp();
 }
 
-function hideFeedbackModal() {
-  if (feedbackModal) {
-    feedbackModal.style.display = 'none';
+// ***** INICIALIZAÇÃO DO APLICATIVO *****
+function initializeApp() {
+    setupEventListeners();
+    loadTeamNames();
+    updateDisplay();
+    updateTimer();
     
-    // Limpa formulário
-    if (feedbackName) feedbackName.value = '';
-    if (feedbackMessage) feedbackMessage.value = '';
-    if (feedbackType) feedbackType.selectedIndex = 0;
+    analytics.sessionsCount++;
+    localStorage.setItem('futtag_sessions', analytics.sessionsCount.toString());
+}
+
+function setupEventListeners() {
+    // Controles de tempo
+    document.getElementById('half1Btn').addEventListener('click', () => setHalf(1));
+    document.getElementById('half2Btn').addEventListener('click', () => setHalf(2));
     
-    // Remove seleção de rating
-    document.querySelectorAll('.rating-btn').forEach(btn => {
-      btn.classList.remove('selected');
+    // Botões de ação principais
+    document.getElementById('startBtn').addEventListener('click', toggleTimer);
+    document.getElementById('undoBtn').addEventListener('click', undoLastEvent);
+    document.getElementById('resetBtn').addEventListener('click', resetGame);
+    document.getElementById('statsBtn').addEventListener('click', showStatsModal);
+    document.getElementById('configBtn').addEventListener('click', showTeamConfig);
+    document.getElementById('exportBtn').addEventListener('click', exportToXML);
+    document.getElementById('feedbackBtn').addEventListener('click', showFeedbackModal); // ✅ CORRIGIDO: Movido para bottom bar
+
+    // Event listeners para botões de eventos
+    setupEventButtons();
+    
+    // Modals
+    setupModalListeners();
+}
+
+function setupEventButtons() {
+    // Finalizações
+    ['fin-e-home', 'fin-c-home', 'fin-d-home', 'fin-e-away', 'fin-c-away', 'fin-d-away'].forEach(id => {
+        document.getElementById(id).addEventListener('click', (e) => handleEvent(e.target));
     });
+    
+    // Entradas no último terço
+    ['ent-e-home', 'ent-c-home', 'ent-d-home', 'ent-e-away', 'ent-c-away', 'ent-d-away'].forEach(id => {
+        document.getElementById(id).addEventListener('click', (e) => handleEvent(e.target));
+    });
+    
+    // Gols
+    ['gol-home', 'gol-away'].forEach(id => {
+        document.getElementById(id).addEventListener('click', (e) => handleEvent(e.target));
+    });
+    
+    // ✅ CORRIGIDO: Escanteios e faltas sem OF/DEF
+    ['esc-home', 'esc-away', 'falta-home', 'falta-away'].forEach(id => {
+        document.getElementById(id).addEventListener('click', (e) => handleEvent(e.target));
+    });
+}
+
+function setupModalListeners() {
+    // Fechar modals
+    document.querySelectorAll('.close-button').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.target.closest('.modal').style.display = 'none';
+        });
+    });
+    
+    // Configuração de times
+    document.getElementById('saveTeamConfig').addEventListener('click', saveTeamConfig);
+    document.getElementById('resetTeamConfig').addEventListener('click', resetTeamConfig);
+    
+    // Beta access
+    document.getElementById('validateBeta').addEventListener('click', validateBetaAccess);
+    
+    // Feedback
+    document.getElementById('submitFeedback').addEventListener('click', submitFeedback);
+    document.getElementById('cancelFeedback').addEventListener('click', () => {
+        document.getElementById('feedbackModal').style.display = 'none';
+    });
+
+    // Estatísticas
+    document.getElementById('prevStatsPage').addEventListener('click', prevStatsPage);
+    document.getElementById('nextStatsPage').addEventListener('click', nextStatsPage);
+    document.getElementById('generatePDF').addEventListener('click', generatePDF);
+}
+
+// ***** FUNÇÕES DO TIMER *****
+function setHalf(half) {
+    gameData.currentHalf = half;
+    document.querySelectorAll('.half-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`half${half}Btn`).classList.add('active');
+    updateDisplay();
+}
+
+function toggleTimer() {
+    const btn = document.getElementById('startBtn');
+    
+    if (gameData.timerRunning) {
+        // Pausar
+        gameData.timerRunning = false;
+        btn.textContent = 'INICIAR';
+        btn.style.backgroundColor = 'var(--primary-action-bg)';
+    } else {
+        // Iniciar
+        gameData.timerRunning = true;
+        gameData.startTime = Date.now() - gameData.elapsedTime;
+        btn.textContent = 'PAUSAR';
+        btn.style.backgroundColor = 'var(--undo-action-bg)';
+        
+        updateTimer();
+    }
+}
+
+function updateTimer() {
+    if (!gameData.timerRunning) return;
+    
+    gameData.elapsedTime = Date.now() - gameData.startTime;
+    updateDisplay();
+    
+    requestAnimationFrame(updateTimer);
+}
+
+function formatTime(ms) {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// ***** FUNÇÕES DE EVENTOS *****
+function handleEvent(button) {
+    const now = Date.now();
+    const gameTime = gameData.elapsedTime;
+    
+    const event = {
+        id: Date.now(),
+        type: button.dataset.type,
+        team: button.dataset.team,
+        zone: button.dataset.zone || null,
+        half: gameData.currentHalf,
+        timestamp: now,
+        gameTime: gameTime,
+        formattedTime: formatTime(gameTime)
+    };
+    
+    // Processar evento específico
+    if (event.type === 'gol') {
+        if (event.team === 'home') {
+            gameData.homeScore++;
+        } else {
+            gameData.awayScore++;
+        }
+        gameData.stats[event.team].gols++;
+    } else if (event.type === 'fin') {
+        gameData.stats[event.team][`fin_${event.zone}`]++;
+    } else if (event.type === 'ent') {
+        gameData.stats[event.team][`ent_${event.zone}`]++;
+    } else if (event.type === 'esc') {
+        gameData.stats[event.team].esc++;
+    } else if (event.type === 'falta') { // ✅ CORRIGIDO: nome atualizado
+        gameData.stats[event.team].falta++;
+    }
+    
+    gameData.events.push(event);
+    updateDisplay();
+    updateEventCounts();
+    
+    // Feedback tátil
+    if (navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+}
+
+function undoLastEvent() {
+    if (gameData.events.length === 0) return;
+    
+    const lastEvent = gameData.events.pop();
+    
+    // Reverter estatísticas
+    if (lastEvent.type === 'gol') {
+        if (lastEvent.team === 'home') {
+            gameData.homeScore = Math.max(0, gameData.homeScore - 1);
+        } else {
+            gameData.awayScore = Math.max(0, gameData.awayScore - 1);
+        }
+        gameData.stats[lastEvent.team].gols = Math.max(0, gameData.stats[lastEvent.team].gols - 1);
+    } else if (lastEvent.type === 'fin') {
+        gameData.stats[lastEvent.team][`fin_${lastEvent.zone}`] = Math.max(0, gameData.stats[lastEvent.team][`fin_${lastEvent.zone}`] - 1);
+    } else if (lastEvent.type === 'ent') {
+        gameData.stats[lastEvent.team][`ent_${lastEvent.zone}`] = Math.max(0, gameData.stats[lastEvent.team][`ent_${lastEvent.zone}`] - 1);
+    } else if (lastEvent.type === 'esc') {
+        gameData.stats[lastEvent.team].esc = Math.max(0, gameData.stats[lastEvent.team].esc - 1);
+    } else if (lastEvent.type === 'falta') {
+        gameData.stats[lastEvent.team].falta = Math.max(0, gameData.stats[lastEvent.team].falta - 1);
+    }
+    
+    updateDisplay();
+    updateEventCounts();
+}
+
+function resetGame() {
+    if (!confirm('⚠️ Tem certeza que deseja reiniciar o jogo?\n\nTodos os dados serão perdidos!')) {
+        return;
+    }
+    
+    gameData = {
+        homeTeam: gameData.homeTeam,
+        awayTeam: gameData.awayTeam,
+        homeScore: 0,
+        awayScore: 0,
+        currentHalf: 1,
+        timerRunning: false,
+        startTime: 0,
+        elapsedTime: 0,
+        events: [],
+        stats: {
+            home: { fin_e: 0, fin_c: 0, fin_d: 0, ent_e: 0, ent_c: 0, ent_d: 0, gols: 0, esc: 0, falta: 0 },
+            away: { fin_e: 0, fin_c: 0, fin_d: 0, ent_e: 0, ent_c: 0, ent_d: 0, gols: 0, esc: 0, falta: 0 }
+        }
+    };
+    
+    setHalf(1);
+    updateDisplay();
+    updateEventCounts();
+    
+    const startBtn = document.getElementById('startBtn');
+    startBtn.textContent = 'INICIAR';
+    startBtn.style.backgroundColor = 'var(--primary-action-bg)';
+}
+
+// ***** FUNÇÕES DE DISPLAY *****
+function updateDisplay() {
+    // Score
+    document.querySelector('.score-display').textContent = `${gameData.homeScore} × ${gameData.awayScore}`;
+    
+    // Timer
+    document.querySelector('.timer-display').textContent = formatTime(gameData.elapsedTime);
+    
+    // Current half
+    document.querySelector('.current-half-display').textContent = `${gameData.currentHalf}°T`;
+    
+    // Team names
+    document.querySelector('.team-column.home .team-name').textContent = gameData.homeTeam;
+    document.querySelector('.team-column.away .team-name').textContent = gameData.awayTeam;
+}
+
+function updateEventCounts() {
+    const updateCount = (id, count) => {
+        const element = document.getElementById(id);
+        if (element) {
+            let badge = element.querySelector('.count-badge');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'count-badge';
+                element.appendChild(badge);
+            }
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'flex' : 'none';
+        }
+    };
+    
+    // Atualizar contadores home
+    updateCount('fin-e-home', gameData.stats.home.fin_e);
+    updateCount('fin-c-home', gameData.stats.home.fin_c);
+    updateCount('fin-d-home', gameData.stats.home.fin_d);
+    updateCount('ent-e-home', gameData.stats.home.ent_e);
+    updateCount('ent-c-home', gameData.stats.home.ent_c);
+    updateCount('ent-d-home', gameData.stats.home.ent_d);
+    updateCount('gol-home', gameData.stats.home.gols);
+    updateCount('esc-home', gameData.stats.home.esc);
+    updateCount('falta-home', gameData.stats.home.falta);
+    
+    // Atualizar contadores away
+    updateCount('fin-e-away', gameData.stats.away.fin_e);
+    updateCount('fin-c-away', gameData.stats.away.fin_c);
+    updateCount('fin-d-away', gameData.stats.away.fin_d);
+    updateCount('ent-e-away', gameData.stats.away.ent_e);
+    updateCount('ent-c-away', gameData.stats.away.ent_c);
+    updateCount('ent-d-away', gameData.stats.away.ent_d);
+    updateCount('gol-away', gameData.stats.away.gols);
+    updateCount('esc-away', gameData.stats.away.esc);
+    updateCount('falta-away', gameData.stats.away.falta);
+}
+
+// ***** CONFIGURAÇÃO DE TIMES *****
+function loadTeamNames() {
+    const homeTeam = localStorage.getItem('futtag_home_team');
+    const awayTeam = localStorage.getItem('futtag_away_team');
+    
+    if (homeTeam) gameData.homeTeam = homeTeam;
+    if (awayTeam) gameData.awayTeam = awayTeam;
+}
+
+function showTeamConfig() {
+    document.getElementById('homeTeamInput').value = gameData.homeTeam;
+    document.getElementById('awayTeamInput').value = gameData.awayTeam;
+    document.getElementById('teamConfigModal').style.display = 'block';
+}
+
+function saveTeamConfig() {
+    const homeTeam = document.getElementById('homeTeamInput').value.trim().toUpperCase();
+    const awayTeam = document.getElementById('awayTeamInput').value.trim().toUpperCase();
+    
+    if (!homeTeam || !awayTeam) {
+        alert('❌ Digite os nomes das duas equipes');
+        return;
+    }
+    
+    if (homeTeam === awayTeam) {
+        alert('❌ Os nomes das equipes devem ser diferentes');
+        return;
+    }
+    
+    gameData.homeTeam = homeTeam;
+    gameData.awayTeam = awayTeam;
+    
+    localStorage.setItem('futtag_home_team', homeTeam);
+    localStorage.setItem('futtag_away_team', awayTeam);
+    
+    updateDisplay();
+    document.getElementById('teamConfigModal').style.display = 'none';
+}
+
+function resetTeamConfig() {
+    gameData.homeTeam = 'CASA';
+    gameData.awayTeam = 'VISITANTE';
+    
+    localStorage.removeItem('futtag_home_team');
+    localStorage.removeItem('futtag_away_team');
+    
+    document.getElementById('homeTeamInput').value = gameData.homeTeam;
+    document.getElementById('awayTeamInput').value = gameData.awayTeam;
+    updateDisplay();
+}
+
+// ***** SISTEMA DE FEEDBACK ***** 
+// ✅ CORRIGIDO: Movido para bottom bar, feedback visual nas estrelas
+let selectedRating = 0;
+
+function showFeedbackModal() {
     selectedRating = 0;
-  }
+    document.querySelectorAll('.rating-btn').forEach(btn => btn.classList.remove('selected'));
+    document.getElementById('feedbackModal').style.display = 'block';
+}
+
+// ✅ CORRIGIDO: Feedback visual persistente nas estrelas
+function selectRating(rating) {
+    selectedRating = rating;
+    document.querySelectorAll('.rating-btn').forEach((btn, index) => {
+        if (index < rating) {
+            btn.classList.add('selected');
+        } else {
+            btn.classList.remove('selected');
+        }
+    });
 }
 
 function submitFeedback() {
-  const name = feedbackName ? feedbackName.value.trim() : '';
-  const type = feedbackType ? feedbackType.value : '';
-  const message = feedbackMessage ? feedbackMessage.value.trim() : '';
-  
-  if (!message) {
-    alert('⚠️ Por favor, escreva sua mensagem de feedback.');
-    return;
-  }
-  
-  if (selectedRating === 0) {
-    alert('⚠️ Por favor, selecione uma avaliação (estrelas).');
-    return;
-  }
-  
-  // Prepara dados do feedback
-  const feedbackData = {
-    timestamp: new Date().toISOString(),
-    betaCode: appState.beta.accessCode,
-    name: name || 'Anônimo',
-    type: type,
-    rating: selectedRating,
-    message: message,
-    analytics: { ...appState.beta.analytics },
-    userAgent: navigator.userAgent,
-    url: window.location.href
-  };
-  
-  // Simula envio (em produção, enviar para API/email)
-  console.log('📤 Feedback enviado:', feedbackData);
-  
-  // Salva feedback localmente para debug
-  try {
-    const savedFeedbacks = JSON.parse(localStorage.getItem('futtag_feedbacks') || '[]');
-    savedFeedbacks.push(feedbackData);
-    localStorage.setItem('futtag_feedbacks', JSON.stringify(savedFeedbacks));
-  } catch (error) {
-    console.warn('Erro ao salvar feedback:', error);
-  }
-  
-  // Atualiza analytics
-  updateAnalytics('feedbackSent');
-  
-  hideFeedbackModal();
-  triggerHapticFeedback();
-  
-  alert('✅ Feedback enviado com sucesso!\n\n🙏 Obrigado por contribuir para o desenvolvimento do FutTag Pro.\n\nSuas sugestões são muito importantes!');
-}
-
-// ==================== GERENCIAMENTO DOS NOMES DAS EQUIPES ====================
-function loadTeamNames() {
-  try {
-    const savedNames = localStorage.getItem('futtag_team_names');
-    if (savedNames) {
-      const names = JSON.parse(savedNames);
-      appState.teamNames.home = names.home || 'CASA';
-      appState.teamNames.away = names.away || 'VISITANTE';
+    const name = document.getElementById('feedbackName').value.trim();
+    const role = document.getElementById('feedbackRole').value;
+    const experience = document.getElementById('feedbackExperience').value;
+    const comments = document.getElementById('feedbackComments').value.trim();
+    
+    if (!name || !role || selectedRating === 0) {
+        alert('❌ Preencha os campos obrigatórios: Nome, Função e Avaliação');
+        return;
     }
-  } catch (error) {
-    console.warn('Erro ao carregar nomes das equipes:', error);
-    appState.teamNames = { home: 'CASA', away: 'VISITANTE' };
-  }
-}
-
-function saveTeamNames() {
-  try {
-    localStorage.setItem('futtag_team_names', JSON.stringify(appState.teamNames));
-  } catch (error) {
-    console.warn('Erro ao salvar nomes das equipes:', error);
-  }
-}
-
-function updateTeamNamesUI() {
-  if (homeTeamName) homeTeamName.textContent = appState.teamNames.home;
-  if (awayTeamName) awayTeamName.textContent = appState.teamNames.away;
-  
-  if (homeTeamInput) homeTeamInput.value = appState.teamNames.home;
-  if (awayTeamInput) awayTeamInput.value = appState.teamNames.away;
-}
-
-function showTeamConfigModal() {
-  triggerHapticFeedback();
-  updateTeamNamesUI();
-  if (teamConfigModal) {
-    teamConfigModal.style.display = 'block';
-    if (homeTeamInput) homeTeamInput.focus();
-  }
-}
-
-function hideTeamConfigModal() {
-  if (teamConfigModal) {
-    teamConfigModal.style.display = 'none';
-  }
-}
-
-function saveTeamConfiguration() {
-  const homeName = homeTeamInput ? homeTeamInput.value.trim() : '';
-  const awayName = awayTeamInput ? awayTeamInput.value.trim() : '';
-  
-  if (!homeName || !awayName) {
-    alert('⚠️ Por favor, preencha os nomes das duas equipes.');
-    return;
-  }
-  
-  if (homeName.length > 15 || awayName.length > 15) {
-    alert('⚠️ Os nomes devem ter no máximo 15 caracteres cada.');
-    return;
-  }
-  
-  appState.teamNames.home = homeName.toUpperCase();
-  appState.teamNames.away = awayName.toUpperCase();
-  
-  saveTeamNames();
-  updateTeamNamesUI();
-  hideTeamConfigModal();
-  
-  triggerHapticFeedback();
-  alert(`✅ Configuração salva!\n🏠 ${appState.teamNames.home} vs ${appState.teamNames.away} ✈️`);
-}
-
-function resetTeamConfiguration() {
-  if (confirm('🔄 Deseja restaurar os nomes padrão das equipes?')) {
-    appState.teamNames.home = 'CASA';
-    appState.teamNames.away = 'VISITANTE';
-    saveTeamNames();
-    updateTeamNamesUI();
-    triggerHapticFeedback();
-  }
-}
-
-// ==================== FUNÇÕES UTILITÁRIAS ====================
-function formatTimeMMSS(ms) {
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-}
-
-function getCurrentTimeSeconds() {
-  const currentMs = appState.timer.isRunning ?
-    (appState.timer.elapsedMs + (performance.now() - appState.timer.startEpoch)) :
-    appState.timer.elapsedMs;
-  return Math.max(0, currentMs / 1000);
-}
-
-function updateUI() {
-  if (scoreHomeDisplay) scoreHomeDisplay.textContent = appState.score.home;
-  if (scoreAwayDisplay) scoreAwayDisplay.textContent = appState.score.away;
-
-  document.querySelectorAll('.count-badge').forEach(badge => {
-    const code = badge.dataset.counter;
-    badge.textContent = appState.eventCounts.total[code] || 0;
-  });
-
-  if (currentHalfDisplay) currentHalfDisplay.textContent = `${appState.currentHalf}°T`;
-
-  document.querySelectorAll('.half-btn').forEach(btn => {
-    const half = parseInt(btn.dataset.half);
-    btn.classList.remove('active');
-    if (half === appState.currentHalf) {
-      btn.classList.add('active');
-    }
-  });
-
-  if (btnToggleTimer) {
-    if (appState.timer.isRunning) {
-      btnToggleTimer.textContent = 'Pausar';
-    } else {
-      btnToggleTimer.textContent = appState.timer.elapsedMs === 0 ? 'Iniciar' : 'Retomar';
-    }
-  }
-
-  if (btnUndo) {
-    btnUndo.disabled = appState.events.length === 0;
-  }
-  
-  updateStatsSummary();
-}
-
-function updateStatsSummary() {
-  if (!finSummary) return;
-  
-  const counts = appState.eventCounts.total;
-  const homeTeamName = appState.teamNames.home;
-  const awayTeamName = appState.teamNames.away;
-  
-  const homeFins = (counts['FIN_HOME_ESQ'] || 0) + (counts['FIN_HOME_CTR'] || 0) + (counts['FIN_HOME_DIR'] || 0);
-  const awayFins = (counts['FIN_AWAY_ESQ'] || 0) + (counts['FIN_AWAY_CTR'] || 0) + (counts['FIN_AWAY_DIR'] || 0);
-  finSummary.textContent = `${homeTeamName}: ${homeFins} | ${awayTeamName}: ${awayFins}`;
-  
-  const homeEnts = (counts['ENT_HOME_ESQ'] || 0) + (counts['ENT_HOME_CTR'] || 0) + (counts['ENT_HOME_DIR'] || 0);
-  const awayEnts = (counts['ENT_AWAY_ESQ'] || 0) + (counts['ENT_AWAY_CTR'] || 0) + (counts['ENT_AWAY_DIR'] || 0);
-  entSummary.textContent = `${homeTeamName}: ${homeEnts} | ${awayTeamName}: ${awayEnts}`;
-  
-  const homeEscs = counts['ESC_OF_HOME'] || 0;
-  const awayEscs = counts['ESC_DEF_AWAY'] || 0;
-  escSummary.textContent = `${homeTeamName}: ${homeEscs} | ${awayTeamName}: ${awayEscs}`;
-  
-  const homeFaltas = counts['FALTA_OF_HOME'] || 0;
-  const awayFaltas = counts['FALTA_DEF_AWAY'] || 0;
-  faltaSummary.textContent = `${homeTeamName}: ${homeFaltas} | ${awayTeamName}: ${awayFaltas}`;
-}
-
-function triggerHapticFeedback() {
-  try { 
-    if (window.navigator.vibrate) {
-      window.navigator.vibrate(50);
-    }
-  } catch (e) {
-    console.log('Vibração não disponível');
-  }
-}
-
-// ==================== FUNÇÕES DO CRONÔMETRO ====================
-function updateTimerDisplay() {
-  if (timerDisplay) {
-    timerDisplay.textContent = formatTimeMMSS(appState.timer.elapsedMs + (appState.timer.isRunning ? (performance.now() - appState.timer.startEpoch) : 0));
-  }
-}
-
-function tick() {
-  if (!appState.timer.isRunning) return;
-  updateTimerDisplay();
-  appState.timer.rafId = requestAnimationFrame(tick);
-}
-
-function startTimer() {
-  if (appState.timer.isRunning) return;
-  appState.timer.isRunning = true;
-  appState.timer.startEpoch = performance.now();
-  updateUI();
-  tick();
-  
-  // Analytics: registra início de jogo
-  if (appState.timer.elapsedMs === 0) {
-    updateAnalytics('gameStarted');
-  }
-}
-
-function pauseTimer() {
-  if (!appState.timer.isRunning) return;
-  appState.timer.isRunning = false;
-  appState.timer.elapsedMs += performance.now() - appState.timer.startEpoch;
-  if (appState.timer.rafId) cancelAnimationFrame(appState.timer.rafId);
-  updateTimerDisplay();
-  updateUI();
-}
-
-function resetTimer() {
-  pauseTimer();
-  appState.timer.elapsedMs = 0;
-  appState.timer.startEpoch = 0;
-  updateTimerDisplay();
-  updateUI();
-}
-
-// ==================== GERENCIAMENTO DE TEMPOS ====================
-function handleHalfControl(half, action) {
-  triggerHapticFeedback();
-  if (action === 'start') {
-    if (appState.currentHalf !== half) {
-      pauseTimer();
-      resetTimer();
-      appState.currentHalf = half;
-      appState.events.push({
-        type: 'HALF_START',
-        half: half,
+    
+    const feedback = {
+        name,
+        role,
+        experience,
+        rating: selectedRating,
+        comments,
         timestamp: new Date().toISOString(),
-        timeInGameSeconds: getCurrentTimeSeconds(),
-        previousState: { timer: { ...appState.timer } }
-      });
-      startTimer();
-    } else if (!appState.timer.isRunning) {
-      startTimer();
-    }
-  } else if (action === 'end') {
-    if (appState.currentHalf === half && appState.timer.isRunning) {
-      pauseTimer();
-      appState.events.push({
-        type: 'HALF_END',
-        half: half,
-        timestamp: new Date().toISOString(),
-        timeInGameSeconds: getCurrentTimeSeconds(),
-        previousState: { timer: { ...appState.timer } }
-      });
-    }
-  }
-  updateUI();
-}
-
-// ==================== GERENCIAMENTO DE EVENTOS ====================
-function initializeEventCounts() {
-  ['total', 'half1', 'half2'].forEach(period => {
-    appState.eventCounts[period] = {};
-    ALL_EVENT_CODES.forEach(code => {
-      appState.eventCounts[period][code] = 0;
-    });
-  });
-}
-
-function recordEventClick(code) {
-  if (!appState.timer.isRunning) {
-    alert('Por favor, inicie o cronômetro antes de registrar eventos.');
-    return;
-  }
-  triggerHapticFeedback();
-
-  const currentTimeSec = getCurrentTimeSeconds();
-  const currentHalf = appState.currentHalf;
-
-  const previousCounts = JSON.parse(JSON.stringify(appState.eventCounts));
-  const previousScore = { ...appState.score };
-
-  appState.eventCounts.total[code] = (appState.eventCounts.total[code] || 0) + 1;
-  appState.eventCounts[`half${currentHalf}`][code] = (appState.eventCounts[`half${currentHalf}`][code] || 0) + 1;
-
-  if (code === 'GOL_HOME') {
-    appState.score.home++;
-  } else if (code === 'GOL_AWAY') {
-    appState.score.away++;
-  }
-
-  const clipStartSec = Math.max(0, currentTimeSec - 25);
-  const clipEndSec = currentTimeSec + 10;
-
-  appState.events.push({
-    id: appState.events.length,
-    type: 'EVENT',
-    code: code,
-    half: currentHalf,
-    timestamp: new Date().toISOString(),
-    timeInGameSeconds: currentTimeSec,
-    start: clipStartSec,
-    end: clipEndSec,
-    previousCounts: previousCounts,
-    previousScore: previousScore
-  });
-
-  updateUI();
-}
-
-function undoLastAction() {
-  triggerHapticFeedback();
-
-  if (appState.events.length === 0) {
-    console.warn('Nenhum evento para desfazer.');
-    return;
-  }
-
-  const lastEvent = appState.events.pop();
-
-  if (lastEvent.type === 'EVENT') {
-    appState.eventCounts = lastEvent.previousCounts;
-    appState.score = lastEvent.previousScore;
-  } else if (lastEvent.type === 'HALF_START' || lastEvent.type === 'HALF_END') {
-    appState.timer = lastEvent.previousState.timer;
-    appState.currentHalf = lastEvent.half;
-    if(appState.timer.isRunning) {
-      startTimer();
-    } else {
-      if (appState.timer.rafId) cancelAnimationFrame(appState.timer.rafId);
-    }
-  }
-
-  updateUI();
-  updateTimerDisplay();
-}
-
-function resetAll() {
-  if (!confirm('Tem certeza que deseja zerar TUDO (placar, cronômetro e eventos)?')) {
-    return;
-  }
-  triggerHapticFeedback();
-
-  appState.score = { home: 0, away: 0 };
-  appState.currentHalf = 1;
-  appState.timer = {
-    isRunning: false,
-    startEpoch: 0,
-    elapsedMs: 0,
-    rafId: null
-  };
-  appState.events = [];
-  
-  initializeEventCounts();
-  resetTimer();
-  updateUI();
-}
-
-// ==================== GERAÇÃO DE GRÁFICOS PARA PDF ====================
-let chartsInstances = {};
-
-if (typeof ChartDataLabels !== 'undefined') {
-  Chart.register(ChartDataLabels);
-}
-
-function createChartForPDF(canvasId, title, data, chartType = 'bar', hideLegend = false) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) {
-    console.error(`Canvas ${canvasId} não encontrado`);
-    return null;
-  }
-  
-  const ctx = canvas.getContext('2d');
-  
-  ctx.save();
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.restore();
-
-  if (chartsInstances[canvasId]) {
-    chartsInstances[canvasId].destroy();
-  }
-
-  const config = {
-    type: chartType,
-    data: data,
-    options: {
-      responsive: false,
-      maintainAspectRatio: false,
-      layout: {
-        padding: {
-          top: 30,
-          left: 20,
-          right: 20,
-          bottom: 20
+        version: 'v3.2',
+        userAgent: navigator.userAgent,
+        sessionData: {
+            sessions: analytics.sessionsCount,
+            opens: analytics.appOpens
         }
-      },
-      plugins: {
-        title: {
-          display: false
-        },
-        legend: {
-          display: !hideLegend,
-          position: 'top',
-          labels: { 
-            color: '#000000',
-            font: { size: 14, weight: 'bold' },
-            padding: 15
-          }
-        },
-        datalabels: {
-          display: function(context) {
-            return context.dataset.data[context.dataIndex] > 0;
-          },
-          color: '#000000',
-          font: {
-            weight: 'bold',
-            size: 14
-          },
-          formatter: (value) => value,
-          align: function(context) {
-            const meta = context.chart.getDatasetMeta(context.datasetIndex);
-            if (meta.stack) {
-              return 'center';
-            }
-            return 'start';
-          },
-          anchor: function(context) {
-            const meta = context.chart.getDatasetMeta(context.datasetIndex);
-            if (meta.stack) {
-              return 'center';
-            }
-            return 'end';
-          },
-          offset: function(context) {
-            const meta = context.chart.getDatasetMeta(context.datasetIndex);
-            if (meta.stack) {
-              return 0;
-            }
-            return -15;
-          }
-        }
-      },
-      scales: chartType === 'bar' ? {
-        y: {
-          beginAtZero: true,
-          stacked: data.datasets.length > 1,
-          ticks: { 
-            color: '#000000',
-            stepSize: 1,
-            font: { size: 12, weight: 'bold' }
-          },
-          grid: { color: 'rgba(0, 0, 0, 0.1)' }
-        },
-        x: {
-          stacked: data.datasets.length > 1,
-          ticks: { 
-            color: '#000000',
-            font: { size: 12, weight: 'bold' }
-          },
-          grid: { color: 'rgba(0, 0, 0, 0.1)' }
-        }
-      } : {},
-      elements: {
-        bar: {
-          borderWidth: 2
-        }
-      },
-      animation: false
-    }
-  };
-
-  try {
-    chartsInstances[canvasId] = new Chart(ctx, config);
-    return chartsInstances[canvasId];
-  } catch (error) {
-    console.error(`Erro ao criar gráfico ${canvasId}:`, error);
-    return null;
-  }
-}
-
-function getDataByPeriod(codes, period) {
-  const counts = appState.eventCounts[period];
-  return codes.reduce((sum, code) => sum + (counts[code] || 0), 0);
-}
-
-function generateAllCharts() {
-  console.log('🔄 Gerando gráficos...');
-  const homeColor = '#00bcd4';
-  const awayColor = '#ff9800';
-
-  // 1. FINALIZAÇÕES (3 gráficos)
-  const finCodesHome = ['FIN_HOME_ESQ', 'FIN_HOME_CTR', 'FIN_HOME_DIR'];
-  const finCodesAway = ['FIN_AWAY_ESQ', 'FIN_AWAY_CTR', 'FIN_AWAY_DIR'];
-  const finLabels = [`${appState.teamNames.home} E`, `${appState.teamNames.home} C`, `${appState.teamNames.home} D`, `${appState.teamNames.away} E`, `${appState.teamNames.away} C`, `${appState.teamNames.away} D`];
-  const finChartColors = [homeColor, homeColor, homeColor, awayColor, awayColor, awayColor];
-
-  const finalizacoesDataTemplate = {
-    labels: finLabels,
-    datasets: [{
-      label: 'Finalizações',
-      data: [],
-      backgroundColor: finChartColors,
-      borderColor: finChartColors,
-      borderWidth: 2
-    }]
-  };
-
-  // 1°T
-  const fin1TData = JSON.parse(JSON.stringify(finalizacoesDataTemplate));
-  fin1TData.datasets[0].data = [
-    getDataByPeriod(['FIN_HOME_ESQ'], 'half1'),
-    getDataByPeriod(['FIN_HOME_CTR'], 'half1'),
-    getDataByPeriod(['FIN_HOME_DIR'], 'half1'),
-    getDataByPeriod(['FIN_AWAY_ESQ'], 'half1'),
-    getDataByPeriod(['FIN_AWAY_CTR'], 'half1'),
-    getDataByPeriod(['FIN_AWAY_DIR'], 'half1')
-  ];
-  createChartForPDF('fin1TChart', 'Finalizações - 1° Tempo', fin1TData, 'bar', true);
-
-  // 2°T
-  const fin2TData = JSON.parse(JSON.stringify(finalizacoesDataTemplate));
-  fin2TData.datasets[0].data = [
-    getDataByPeriod(['FIN_HOME_ESQ'], 'half2'),
-    getDataByPeriod(['FIN_HOME_CTR'], 'half2'),
-    getDataByPeriod(['FIN_HOME_DIR'], 'half2'),
-    getDataByPeriod(['FIN_AWAY_ESQ'], 'half2'),
-    getDataByPeriod(['FIN_AWAY_CTR'], 'half2'),
-    getDataByPeriod(['FIN_AWAY_DIR'], 'half2')
-  ];
-  createChartForPDF('fin2TChart', 'Finalizações - 2° Tempo', fin2TData, 'bar', true);
-
-  // Total
-  const finTotalData = JSON.parse(JSON.stringify(finalizacoesDataTemplate));
-  finTotalData.datasets[0].data = [
-    getDataByPeriod(['FIN_HOME_ESQ'], 'total'),
-    getDataByPeriod(['FIN_HOME_CTR'], 'total'),
-    getDataByPeriod(['FIN_HOME_DIR'], 'total'),
-    getDataByPeriod(['FIN_AWAY_ESQ'], 'total'),
-    getDataByPeriod(['FIN_AWAY_CTR'], 'total'),
-    getDataByPeriod(['FIN_AWAY_DIR'], 'total')
-  ];
-  createChartForPDF('finTotalChart', 'Finalizações - Total da Partida', finTotalData, 'bar', true);
-
-  // 2. ENTRADAS NO ÚLTIMO TERÇO (3 gráficos)
-  const entCodesHome = ['ENT_HOME_ESQ', 'ENT_HOME_CTR', 'ENT_HOME_DIR'];
-  const entCodesAway = ['ENT_AWAY_ESQ', 'ENT_AWAY_CTR', 'ENT_AWAY_DIR'];
-  const entLabels = [`${appState.teamNames.home} E`, `${appState.teamNames.home} C`, `${appState.teamNames.home} D`, `${appState.teamNames.away} E`, `${appState.teamNames.away} C`, `${appState.teamNames.away} D`];
-
-  const entradasDataTemplate = {
-    labels: entLabels,
-    datasets: [{
-      label: 'Entradas no Último Terço',
-      data: [],
-      backgroundColor: finChartColors,
-      borderColor: finChartColors,
-      borderWidth: 2
-    }]
-  };
-
-  // 1°T
-  const ent1TData = JSON.parse(JSON.stringify(entradasDataTemplate));
-  ent1TData.datasets[0].data = [
-    getDataByPeriod(['ENT_HOME_ESQ'], 'half1'),
-    getDataByPeriod(['ENT_HOME_CTR'], 'half1'),
-    getDataByPeriod(['ENT_HOME_DIR'], 'half1'),
-    getDataByPeriod(['ENT_AWAY_ESQ'], 'half1'),
-    getDataByPeriod(['ENT_AWAY_CTR'], 'half1'),
-    getDataByPeriod(['ENT_AWAY_DIR'], 'half1')
-  ];
-  createChartForPDF('ent1TChart', 'Entradas no Último Terço - 1° Tempo', ent1TData, 'bar', true);
-
-  // 2°T
-  const ent2TData = JSON.parse(JSON.stringify(entradasDataTemplate));
-  ent2TData.datasets[0].data = [
-    getDataByPeriod(['ENT_HOME_ESQ'], 'half2'),
-    getDataByPeriod(['ENT_HOME_CTR'], 'half2'),
-    getDataByPeriod(['ENT_HOME_DIR'], 'half2'),
-    getDataByPeriod(['ENT_AWAY_ESQ'], 'half2'),
-    getDataByPeriod(['ENT_AWAY_CTR'], 'half2'),
-    getDataByPeriod(['ENT_AWAY_DIR'], 'half2')
-  ];
-  createChartForPDF('ent2TChart', 'Entradas no Último Terço - 2° Tempo', ent2TData, 'bar', true);
-
-  // Total
-  const entTotalData = JSON.parse(JSON.stringify(entradasDataTemplate));
-  entTotalData.datasets[0].data = [
-    getDataByPeriod(['ENT_HOME_ESQ'], 'total'),
-    getDataByPeriod(['ENT_HOME_CTR'], 'total'),
-    getDataByPeriod(['ENT_HOME_DIR'], 'total'),
-    getDataByPeriod(['ENT_AWAY_ESQ'], 'total'),
-    getDataByPeriod(['ENT_AWAY_CTR'], 'total'),
-    getDataByPeriod(['ENT_AWAY_DIR'], 'total')
-  ];
-  createChartForPDF('entTotalChart', 'Entradas no Último Terço - Total da Partida', entTotalData, 'bar', true);
-
-  // 3. ESCANTEIOS E FALTAS LATERAIS (3 gráficos empilhados)
-  const escFaltaLabels = [appState.teamNames.home, appState.teamNames.away];
-  const escCodes = ['ESC_OF_HOME'];
-  const faltaCodes = ['FALTA_OF_HOME'];
-  const awayEscCodes = ['ESC_DEF_AWAY'];
-  const awayFaltaCodes = ['FALTA_DEF_AWAY'];
-
-  function createEscFaltaData(period) {
-    return {
-      labels: escFaltaLabels,
-      datasets: [
-        {
-          label: 'Escanteios',
-          data: [getDataByPeriod(escCodes, period), getDataByPeriod(awayEscCodes, period)],
-          backgroundColor: '#2196f3',
-          borderColor: '#1976d2',
-          borderWidth: 2
-        },
-        {
-          label: 'Faltas Laterais',
-          data: [getDataByPeriod(faltaCodes, period), getDataByPeriod(awayFaltaCodes, period)],
-          backgroundColor: '#f44336',
-          borderColor: '#d32f2f',
-          borderWidth: 2
-        }
-      ]
     };
-  }
-
-  createChartForPDF('escFalta1TChart', 'Escanteios e Faltas Laterais - 1° Tempo', createEscFaltaData('half1'));
-  createChartForPDF('escFalta2TChart', 'Escanteios e Faltas Laterais - 2° Tempo', createEscFaltaData('half2'));
-  createChartForPDF('escFaltaTotalChart', 'Escanteios e Faltas Laterais - Total da Partida', createEscFaltaData('total'));
-  
-  console.log('✅ Gráficos gerados com sucesso!');
+    
+    console.log('📝 Feedback coletado:', feedback);
+    
+    alert('✅ Feedback enviado com sucesso!\n\nObrigado por ajudar a melhorar o FutTag Pro!');
+    
+    // Reset form
+    document.getElementById('feedbackForm').reset();
+    selectedRating = 0;
+    document.querySelectorAll('.rating-btn').forEach(btn => btn.classList.remove('selected'));
+    document.getElementById('feedbackModal').style.display = 'none';
 }
 
-// ==================== GERAÇÃO DE PDF ====================
-async function generatePDFReport() {
-  if (!window.jspdf) {
-    alert('❌ Biblioteca jsPDF não carregada. Recarregue a página.');
-    return;
-  }
-
-  try {
-    triggerHapticFeedback();
-    console.log('🔄 Iniciando geração do PDF...');
-    
-    generateAllCharts();
-    
-    await new Promise(resolve => setTimeout(resolve, 2000)); 
-    console.log('⏰ Aguardando renderização...');
-    
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    
-    const pageWidth = 210;
-    const pageHeight = 297;
-    const margin = 15;
-    const chartPdfWidth = 180;
-    const chartPdfHeight = 60;
-
-    function getCanvasImageData(canvasId) {
-      const canvas = document.getElementById(canvasId);
-      if (!canvas) {
-        throw new Error(`Canvas ${canvasId} não encontrado no DOM.`);
-      }
-      return canvas.toDataURL('image/png', 1.0);
-    }
-    
-    const getTotals = (codesHome, codesAway, period) => {
-      const counts = appState.eventCounts[period];
-      const totalHome = codesHome.reduce((acc, code) => acc + (counts[code] || 0), 0);
-      const totalAway = codesAway.reduce((acc, code) => acc + (counts[code] || 0), 0);
-      return `Total ${appState.teamNames.home}: ${totalHome} | Total ${appState.teamNames.away}: ${totalAway}`;
-    };
-
-    // === CABEÇALHO DE PROTEÇÃO ===
-    function addProtectionHeader(pdf, pageNum) {
-      // Marca de proteção no cabeçalho
-      pdf.setFontSize(8);
-      pdf.setTextColor(150, 150, 150);
-      pdf.text(`FutTag Pro BETA © 2025 - Usuário: ${appState.beta.accessCode}`, margin, 8);
-      pdf.text(`Gerado em: ${new Date().toLocaleString('pt-BR')} | Página ${pageNum}`, pageWidth - margin, 8, { align: 'right' });
-      
-      // Linha de separação
-      pdf.setDrawColor(200, 200, 200);
-      pdf.line(margin, 12, pageWidth - margin, 12);
-    }
-
-    // === RODAPÉ DE PROTEÇÃO ===
-    function addProtectionFooter(pdf) {
-      pdf.setFontSize(7);
-      pdf.setTextColor(100, 100, 100);
-      pdf.text('VERSÃO BETA - NÃO DISTRIBUIR - Contato: bonin@futtagpro.com', pageWidth/2, pageHeight - 5, { align: 'center' });
-    }
-
-    // --- PAGE 1: FINALIZAÇÕES ---
-    console.log('📄 Gerando página 1 - Finalizações...');
-    
-    addProtectionHeader(pdf, 1);
-    
-    let yCurrent = 25;
-    pdf.setFontSize(20);
-    pdf.setTextColor(0, 0, 0); 
-    pdf.text('ESTATÍSTICAS DO JOGO', pageWidth/2, yCurrent, { align: 'center' });
-    yCurrent += 10;
-    
-    pdf.setFontSize(12);
-    pdf.text(`${appState.teamNames.home} ${appState.score.home} x ${appState.score.away} ${appState.teamNames.away}`, pageWidth/2, yCurrent, { align: 'center' });
-    yCurrent += 7;
-    pdf.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth/2, yCurrent, { align: 'center' });
-    yCurrent += 13;
-    
-    pdf.setFontSize(16);
-    pdf.setTextColor(76, 175, 80);
-    pdf.text('FINALIZAÇÕES', pageWidth/2, yCurrent, { align: 'center' });
-    yCurrent += 10;
-
-    const finCharts = [
-      { id: 'fin1TChart', title: '1° Tempo', codesHome: ['FIN_HOME_ESQ', 'FIN_HOME_CTR', 'FIN_HOME_DIR'], codesAway: ['FIN_AWAY_ESQ', 'FIN_AWAY_CTR', 'FIN_AWAY_DIR'], period: 'half1' },
-      { id: 'fin2TChart', title: '2° Tempo', codesHome: ['FIN_HOME_ESQ', 'FIN_HOME_CTR', 'FIN_HOME_DIR'], codesAway: ['FIN_AWAY_ESQ', 'FIN_AWAY_CTR', 'FIN_AWAY_DIR'], period: 'half2' },
-      { id: 'finTotalChart', title: 'Total da Partida', codesHome: ['FIN_HOME_ESQ', 'FIN_HOME_CTR', 'FIN_HOME_DIR'], codesAway: ['FIN_AWAY_ESQ', 'FIN_AWAY_CTR', 'FIN_AWAY_DIR'], period: 'total' }
-    ];
-    
-    for (const chart of finCharts) {
-      try {
-        const canvasImg = getCanvasImageData(chart.id);
-        
-        pdf.setFontSize(12);
-        pdf.setTextColor(0, 0, 0);
-        pdf.text(chart.title, pageWidth/2, yCurrent, { align: 'center' });
-        yCurrent += 5;
-        
-        pdf.addImage(canvasImg, 'PNG', margin, yCurrent, chartPdfWidth, chartPdfHeight);
-        yCurrent += chartPdfHeight;
-        
-        pdf.setFontSize(10);
-        pdf.text(getTotals(chart.codesHome, chart.codesAway, chart.period), pageWidth/2, yCurrent + 5, { align: 'center' });
-        yCurrent += 15;
-      } catch (error) {
-        console.error(`Erro ao processar gráfico ${chart.id}:`, error);
-      }
-    }
-    
-    addProtectionFooter(pdf);
-
-    // --- PAGE 2: ENTRADAS NO ÚLTIMO TERÇO ---
-    console.log('📄 Gerando página 2 - Entradas...');
-    pdf.addPage();
-    addProtectionHeader(pdf, 2);
-    
-    yCurrent = 30;
-    pdf.setFontSize(16);
-    pdf.setTextColor(156, 39, 176);
-    pdf.text('ENTRADAS NO ÚLTIMO TERÇO', pageWidth/2, yCurrent, { align: 'center' });
-    yCurrent += 10;
-    
-    const entCharts = [
-      { id: 'ent1TChart', title: '1° Tempo', codesHome: ['ENT_HOME_ESQ', 'ENT_HOME_CTR', 'ENT_HOME_DIR'], codesAway: ['ENT_AWAY_ESQ', 'ENT_AWAY_CTR', 'ENT_AWAY_DIR'], period: 'half1' },
-      { id: 'ent2TChart', title: '2° Tempo', codesHome: ['ENT_HOME_ESQ', 'ENT_HOME_CTR', 'ENT_HOME_DIR'], codesAway: ['ENT_AWAY_ESQ', 'ENT_AWAY_CTR', 'ENT_AWAY_DIR'], period: 'half2' },
-      { id: 'entTotalChart', title: 'Total da Partida', codesHome: ['ENT_HOME_ESQ', 'ENT_HOME_CTR', 'ENT_HOME_DIR'], codesAway: ['ENT_AWAY_ESQ', 'ENT_AWAY_CTR', 'ENT_AWAY_DIR'], period: 'total' }
-    ];
-    
-    for (const chart of entCharts) {
-      try {
-        const canvasImg = getCanvasImageData(chart.id);
-        
-        pdf.setFontSize(12);
-        pdf.setTextColor(0, 0, 0);
-        pdf.text(chart.title, pageWidth/2, yCurrent, { align: 'center' });
-        yCurrent += 5;
-        
-        pdf.addImage(canvasImg, 'PNG', margin, yCurrent, chartPdfWidth, chartPdfHeight);
-        yCurrent += chartPdfHeight;
-        
-        pdf.setFontSize(10);
-        pdf.text(getTotals(chart.codesHome, chart.codesAway, chart.period), pageWidth/2, yCurrent + 5, { align: 'center' });
-        yCurrent += 15;
-      } catch (error) {
-        console.error(`Erro ao processar gráfico ${chart.id}:`, error);
-      }
-    }
-
-    addProtectionFooter(pdf);
-    
-    // --- PAGE 3: ESCANTEIOS E FALTAS LATERAIS ---
-    console.log('📄 Gerando página 3 - Escanteios e Faltas...');
-    pdf.addPage();
-    addProtectionHeader(pdf, 3);
-    
-    yCurrent = 30;
-    pdf.setFontSize(16);
-    pdf.setTextColor(33, 150, 243);
-    pdf.text('ESCANTEIOS E FALTAS LATERAIS', pageWidth/2, yCurrent, { align: 'center' });
-    yCurrent += 10;
-    
-    const escFaltaCharts = [
-      { id: 'escFalta1TChart', title: '1° Tempo', codesHome: ['ESC_OF_HOME'], codesAway: ['ESC_DEF_AWAY'], codesHome_FL: ['FALTA_OF_HOME'], codesAway_FL: ['FALTA_DEF_AWAY'], period: 'half1' },
-      { id: 'escFalta2TChart', title: '2° Tempo', codesHome: ['ESC_OF_HOME'], codesAway: ['ESC_DEF_AWAY'], codesHome_FL: ['FALTA_OF_HOME'], codesAway_FL: ['FALTA_DEF_AWAY'], period: 'half2' },
-      { id: 'escFaltaTotalChart', title: 'Total da Partida', codesHome: ['ESC_OF_HOME'], codesAway: ['ESC_DEF_AWAY'], codesHome_FL: ['FALTA_OF_HOME'], codesAway_FL: ['FALTA_DEF_AWAY'], period: 'total' }
-    ];
-    
-    for (const chart of escFaltaCharts) {
-      try {
-        const canvasImg = getCanvasImageData(chart.id);
-        
-        pdf.setFontSize(12);
-        pdf.setTextColor(0, 0, 0);
-        pdf.text(chart.title, pageWidth/2, yCurrent, { align: 'center' });
-        yCurrent += 5;
-        
-        pdf.addImage(canvasImg, 'PNG', margin, yCurrent, chartPdfWidth, chartPdfHeight);
-        yCurrent += chartPdfHeight;
-        
-        const totalEscanteios = getTotals(chart.codesHome, chart.codesAway, chart.period);
-        const totalFaltas = getTotals(chart.codesHome_FL, chart.codesAway_FL, chart.period);
-        pdf.setFontSize(10);
-        pdf.text(`Escanteios - ${totalEscanteios}`, pageWidth/2, yCurrent + 2, { align: 'center' });
-        pdf.text(`Faltas Laterais - ${totalFaltas}`, pageWidth/2, yCurrent + 8, { align: 'center' });
-        yCurrent += 15;
-      } catch (error) {
-        console.error(`Erro ao processar gráfico ${chart.id}:`, error);
-      }
-    }
-    
-    addProtectionFooter(pdf);
-
-    // Salva o PDF
-    const filename = `futtag_${appState.teamNames.home}_vs_${appState.teamNames.away}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.pdf`;
-    console.log('💾 Salvando PDF...');
-    pdf.save(filename);
-    
-    // Limpa os gráficos
-    Object.values(chartsInstances).forEach(chart => {
-      if (chart) chart.destroy();
-    });
-    chartsInstances = {};
-    
-    // Analytics: registra PDF gerado
-    updateAnalytics('pdfGenerated');
-    
-    console.log('✅ PDF gerado com sucesso!');
-    alert('📄 Relatório PDF gerado com sucesso!\n\n📊 Analytics: PDF #' + appState.beta.analytics.pdfsGenerated);
-    
-  } catch (error) {
-    console.error('❌ Erro detalhado na geração do PDF:', error);
-    alert(`❌ Erro ao gerar PDF: ${error.message}`);
-    
-    Object.values(chartsInstances).forEach(chart => {
-      if (chart) chart.destroy();
-    });
-    chartsInstances = {};
-  }
-}
-
-// ==================== FUNÇÕES DE EXPORTAÇÃO XML ====================
-function escapeXml(unsafe) {
-  return unsafe.replace(/[<>&'"]/g, function (c) {
-    switch (c) {
-      case '<': return '&lt;';
-      case '>': return '&gt;';
-      case '&': return '&amp;';
-      case "'": return '&apos;';
-      case '"': return '&quot;';
-      default: return c;
-    }
-  });
-}
-
-function hexToRgb(hex) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return { r, g, b };
-}
-
-function rgbToLiveTagProColor(rgbVal) {
-  return Math.round(rgbVal / 255 * 65535);
-}
-
-const rowDefinitions = [
-  // HOME
-  { code: 'FIN_HOME_ESQ', sort_order: 1, color: '#4caf50', label: 'FIN_HOME_ESQ' },
-  { code: 'FIN_HOME_CTR', sort_order: 2, color: '#66bb6a', label: 'FIN_HOME_CTR' },
-  { code: 'FIN_HOME_DIR', sort_order: 3, color: '#81c784', label: 'FIN_HOME_DIR' },
-  { code: 'ENT_HOME_ESQ', sort_order: 4, color: '#9c27b0', label: 'ENT_HOME_ESQ' },
-  { code: 'ENT_HOME_CTR', sort_order: 5, color: '#ab47bc', label: 'ENT_HOME_CTR' },
-  { code: 'ENT_HOME_DIR', sort_order: 6, color: '#ba68c8', label: 'ENT_HOME_DIR' },
-  { code: 'GOL_HOME', sort_order: 7, color: '#e91e63', label: 'GOL_HOME' },
-  { code: 'ESC_OF_HOME', sort_order: 8, color: '#2196f3', label: 'ESC_OF_HOME' },
-  { code: 'FALTA_OF_HOME', sort_order: 9, color: '#f44336', label: 'FALTA_OF_HOME' },
-
-  // AWAY
-  { code: 'FIN_AWAY_ESQ', sort_order: 10, color: '#ff9800', label: 'FIN_AWAY_ESQ' },
-  { code: 'FIN_AWAY_CTR', sort_order: 11, color: '#ffa726', label: 'FIN_AWAY_CTR' },
-  { code: 'FIN_AWAY_DIR', sort_order: 12, color: '#ffb74d', label: 'FIN_AWAY_DIR' },
-  { code: 'ENT_AWAY_ESQ', sort_order: 13, color: '#795548', label: 'ENT_AWAY_ESQ' },
-  { code: 'ENT_AWAY_CTR', sort_order: 14, color: '#8d6e63', label: 'ENT_AWAY_CTR' },
-  { code: 'ENT_AWAY_DIR', sort_order: 15, color: '#a1887f', label: 'ENT_AWAY_DIR' },
-  { code: 'GOL_AWAY', sort_order: 16, color: '#e91e63', label: 'GOL_AWAY' },
-  { code: 'ESC_DEF_AWAY', sort_order: 17, color: '#2196f3', label: 'ESC_DEF_AWAY' },
-  { code: 'FALTA_DEF_AWAY', sort_order: 18, color: '#f44336', label: 'FALTA_DEF_AWAY' },
-];
-
-function buildLiveTagProXml() {
-  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  xml += '<file>\n';
-  xml += `    <!--Generated by FutTag Pro BETA - User: ${appState.beta.accessCode} - ${appState.teamNames.home} vs ${appState.teamNames.away}-->\n`;
-  xml += '    <SORT_INFO>\n';
-  xml += '        <sort_type>sort order</sort_type>\n';
-  xml += '    </SORT_INFO>\n';
-  xml += '    <ALL_INSTANCES>\n';
-
-  const eventInstances = appState.events.filter(event => event.type === 'EVENT');
-
-  eventInstances.forEach(event => {
-    xml += '        <instance>\n';
-    xml += `            <ID>${event.id}</ID>\n`;
-    xml += `            <code>${escapeXml(event.code)}</code>\n`;
-    xml += `            <start>${event.start.toFixed(6)}</start>\n`;
-    xml += `            <end>${event.end.toFixed(6)}</end>\n`;
-    xml += '            <label>\n';
-    xml += '                <group>Event</group>\n';
-    xml += `                <text>${escapeXml(event.code)}</text>\n`;
-    xml += '            </label>\n';
-    xml += '        </instance>\n';
-  });
-
-  xml += '    </ALL_INSTANCES>\n';
-  xml += '    <ROWS>\n';
-
-  rowDefinitions.forEach(row => {
-    const rgb = hexToRgb(row.color);
-    const R = rgbToLiveTagProColor(rgb.r);
-    const G = rgbToLiveTagProColor(rgb.g);
-    const B = rgbToLiveTagProColor(rgb.b);
-    xml += '        <row>\n';
-    xml += `            <sort_order>${row.sort_order}</sort_order>\n`;
-    xml += `            <code>${escapeXml(row.code)}</code>\n`;
-    xml += `            <R>${R}</R>\n`;
-    xml += `            <G>${G}</G>\n`;
-    xml += `            <B>${B}</B>\n`;
-    xml += '        </row>\n';
-  });
-
-  xml += '    </ROWS>\n';
-  xml += '</file>\n';
-  return xml;
-}
-
-function exportXML() {
-  triggerHapticFeedback();
-  const xmlContent = buildLiveTagProXml();
-  const blob = new Blob([xmlContent], { type: 'application/xml;charset=utf-8;' });
-  const downloadLink = document.createElement('a');
-  downloadLink.href = URL.createObjectURL(blob);
-  downloadLink.download = `futtag_${appState.teamNames.home}_vs_${appState.teamNames.away}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.xml`;
-  document.body.appendChild(downloadLink);
-  downloadLink.click();
-  document.body.removeChild(downloadLink);
-  URL.revokeObjectURL(downloadLink.href);
-  
-  // Analytics: registra XML exportado
-  updateAnalytics('xmlExported');
-  
-  alert('📁 Arquivo XML exportado com sucesso!\n\n📊 Analytics: XML #' + appState.beta.analytics.xmlsExported);
-}
-
-// ==================== FUNÇÕES DE MODAL ====================
+// ***** SISTEMA DE ESTATÍSTICAS *****
 function showStatsModal() {
-  triggerHapticFeedback();
-  updateStatsSummary();
-  if (statsModal) {
-    statsModal.style.display = 'block';
-  }
+    const modal = document.getElementById('statsModal');
+    currentStatsPage = 1;
+    updateStatsDisplay();
+    modal.style.display = 'block';
 }
 
-function hideStatsModal() {
-  if (statsModal) {
-    statsModal.style.display = 'none';
-  }
-  
-  Object.values(chartsInstances).forEach(chart => {
-    if (chart) chart.destroy();
-  });
-  chartsInstances = {};
-}
-
-// ==================== EVENT LISTENERS ====================
-
-// Cronômetro
-if (btnToggleTimer) {
-  btnToggleTimer.addEventListener('click', () => {
-    if (!appState.timer.isRunning && appState.timer.elapsedMs === 0) {
-      startTimer();
-    } else if (appState.timer.isRunning) {
-      pauseTimer();
-    } else {
-      startTimer();
+function updateStatsDisplay() {
+    const homeStats = gameData.stats.home;
+    const awayStats = gameData.stats.away;
+    
+    // Update page indicator
+    document.getElementById('statsPageIndicator').textContent = `${currentStatsPage}/${TOTAL_STATS_PAGES}`;
+    
+    // Update navigation buttons
+    document.getElementById('prevStatsPage').disabled = currentStatsPage === 1;
+    document.getElementById('nextStatsPage').disabled = currentStatsPage === TOTAL_STATS_PAGES;
+    
+    // Clear existing charts
+    const chartsContainer = document.getElementById('statsCharts');
+    chartsContainer.innerHTML = '';
+    
+    // Clear chart instances
+    Object.values(chartInstances).forEach(chart => chart.destroy());
+    chartInstances = {};
+    
+    if (currentStatsPage === 1) {
+        // Página 1: Visão Geral + Finalizações + Entradas
+        chartsContainer.innerHTML = `
+            <div class="stats-page">
+                <h3>📊 Página 1 - Visão Geral</h3>
+                <div class="chart-grid">
+                    <div class="chart-container">
+                        <canvas id="overviewChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="shotsChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="entriesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        setTimeout(() => {
+            createOverviewChart();
+            createShotsChart();
+            createEntriesChart();
+        }, 100);
+        
+    } else if (currentStatsPage === 2) {
+        // Página 2: Heatmaps + Distribuição por Zona
+        chartsContainer.innerHTML = `
+            <div class="stats-page">
+                <h3>🗺️ Página 2 - Análise Espacial</h3>
+                <div class="chart-grid">
+                    <div class="chart-container">
+                        <canvas id="heatmapShotsChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="heatmapEntriesChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="zoneDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        setTimeout(() => {
+            createHeatmapShotsChart();
+            createHeatmapEntriesChart();
+            createZoneDistributionChart();
+        }, 100);
+        
+    } else if (currentStatsPage === 3) {
+        // Página 3: Eventos Gerais + Timeline
+        chartsContainer.innerHTML = `
+            <div class="stats-page">
+                <h3>⏱️ Página 3 - Eventos e Timeline</h3>
+                <div class="chart-grid">
+                    <div class="chart-container">
+                        <canvas id="eventsChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="efficiencyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        setTimeout(() => {
+            createEventsChart();
+            createTimelineChart();
+            createEfficiencyChart();
+        }, 100);
     }
-  });
 }
 
-// Controles principais
-if (btnResetAll) btnResetAll.addEventListener('click', resetAll);
-if (btnUndo) btnUndo.addEventListener('click', undoLastAction);
-if (btnShowStats) btnShowStats.addEventListener('click', showStatsModal);
-if (btnTeamConfig) btnTeamConfig.addEventListener('click', showTeamConfigModal);
-
-// Controles de metade
-document.querySelectorAll('.half-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const half = parseInt(btn.dataset.half);
-    const action = btn.dataset.action;
-    handleHalfControl(half, action);
-  });
-});
-
-// Botões de eventos
-document.querySelectorAll('.event-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const code = btn.dataset.code;
-    if (code) {
-      recordEventClick(code);
+function prevStatsPage() {
+    if (currentStatsPage > 1) {
+        currentStatsPage--;
+        updateStatsDisplay();
     }
-  });
-});
+}
 
-// Modal de acesso beta
-if (btnValidateBeta) btnValidateBeta.addEventListener('click', validateBetaCode);
-if (betaCodeInput) {
-  betaCodeInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      validateBetaCode();
+function nextStatsPage() {
+    if (currentStatsPage < TOTAL_STATS_PAGES) {
+        currentStatsPage++;
+        updateStatsDisplay();
     }
-  });
 }
 
-// Modal de estatísticas
-if (closeButton) closeButton.addEventListener('click', hideStatsModal);
-window.addEventListener('click', (event) => {
-  if (event.target === statsModal) {
-    hideStatsModal();
-  }
-});
+// ***** FUNÇÕES DE CRIAÇÃO DOS GRÁFICOS *****
+function createOverviewChart() {
+    const ctx = document.getElementById('overviewChart');
+    if (!ctx) return;
+    
+    const homeStats = gameData.stats.home;
+    const awayStats = gameData.stats.away;
+    
+    const totalHome = homeStats.fin_e + homeStats.fin_c + homeStats.fin_d + 
+                     homeStats.ent_e + homeStats.ent_c + homeStats.ent_d + 
+                     homeStats.esc + homeStats.falta;
+    const totalAway = awayStats.fin_e + awayStats.fin_c + awayStats.fin_d + 
+                     awayStats.ent_e + awayStats.ent_c + awayStats.ent_d + 
+                     awayStats.esc + awayStats.falta;
+    
+    chartInstances.overview = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [gameData.homeTeam, gameData.awayTeam],
+            datasets: [
+                {
+                    label: 'Total de Eventos',
+                    data: [totalHome, totalAway],
+                    backgroundColor: ['#00bcd4', '#ff9800'],
+                    borderColor: ['#00acc1', '#f57c00'],
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Visão Geral dos Eventos',
+                    color: '#e0e0f0'
+                },
+                legend: {
+                    labels: { color: '#e0e0f0' }
+                },
+                datalabels: {
+                    color: '#fff',
+                    font: { weight: 'bold', size: 14 }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#a0a0c0' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                x: {
+                    ticks: { color: '#a0a0c0' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+}
 
-// Modal de configuração das equipes
-if (teamConfigClose) teamConfigClose.addEventListener('click', hideTeamConfigModal);
-if (btnSaveTeamConfig) btnSaveTeamConfig.addEventListener('click', saveTeamConfiguration);
-if (btnResetTeamConfig) btnResetTeamConfig.addEventListener('click', resetTeamConfiguration);
+function createShotsChart() {
+    const ctx = document.getElementById('shotsChart');
+    if (!ctx) return;
+    
+    const homeStats = gameData.stats.home;
+    const awayStats = gameData.stats.away;
+    
+    chartInstances.shots = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Finalizações Esq', 'Finalizações Centro', 'Finalizações Dir'],
+            datasets: [
+                {
+                    label: gameData.homeTeam,
+                    data: [homeStats.fin_e, homeStats.fin_c, homeStats.fin_d],
+                    backgroundColor: 'rgba(0, 188, 212, 0.2)',
+                    borderColor: '#00bcd4',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#00bcd4'
+                },
+                {
+                    label: gameData.awayTeam,
+                    data: [awayStats.fin_e, awayStats.fin_c, awayStats.fin_d],
+                    backgroundColor: 'rgba(255, 152, 0, 0.2)',
+                    borderColor: '#ff9800',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#ff9800'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Distribuição das Finalizações',
+                    color: '#e0e0f0'
+                },
+                legend: {
+                    labels: { color: '#e0e0f0' }
+                }
+            },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    ticks: { color: '#a0a0c0' },
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    pointLabels: { color: '#e0e0f0' }
+                }
+            }
+        }
+    });
+}
 
-window.addEventListener('click', (event) => {
-  if (event.target === teamConfigModal) {
-    hideTeamConfigModal();
-  }
-});
+function createEntriesChart() {
+    const ctx = document.getElementById('entriesChart');
+    if (!ctx) return;
+    
+    const homeStats = gameData.stats.home;
+    const awayStats = gameData.stats.away;
+    
+    chartInstances.entries = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Esquerda', 'Centro', 'Direita'],
+            datasets: [
+                {
+                    label: gameData.homeTeam,
+                    data: [homeStats.ent_e, homeStats.ent_c, homeStats.ent_d],
+                    backgroundColor: '#00bcd4'
+                },
+                {
+                    label: gameData.awayTeam,
+                    data: [awayStats.ent_e, awayStats.ent_c, awayStats.ent_d],
+                    backgroundColor: '#ff9800'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Entradas no Último Terço',
+                    color: '#e0e0f0'
+                },
+                legend: {
+                    labels: { color: '#e0e0f0' }
+                },
+                datalabels: {
+                    color: '#fff',
+                    font: { weight: 'bold' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#a0a0c0' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                x: {
+                    ticks: { color: '#a0a0c0' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+}
 
-if (homeTeamInput) {
-  homeTeamInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      if (awayTeamInput) awayTeamInput.focus();
+function createHeatmapShotsChart() {
+    const ctx = document.getElementById('heatmapShotsChart');
+    if (!ctx) return;
+    
+    const homeStats = gameData.stats.home;
+    const awayStats = gameData.stats.away;
+    
+    // Simulated heatmap data for shots
+    const heatmapData = [
+        [homeStats.fin_e, homeStats.fin_c, homeStats.fin_d],
+        [awayStats.fin_e, awayStats.fin_c, awayStats.fin_d]
+    ];
+    
+    chartInstances.heatmapShots = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Esquerda', 'Centro', 'Direita'],
+            datasets: [
+                {
+                    label: `${gameData.homeTeam} - Finalizações`,
+                    data: [homeStats.fin_e, homeStats.fin_c, homeStats.fin_d],
+                    backgroundColor: ['#00bcd4', '#00acc1', '#0097a7']
+                },
+                {
+                    label: `${gameData.awayTeam} - Finalizações`,
+                    data: [awayStats.fin_e, awayStats.fin_c, awayStats.fin_d],
+                    backgroundColor: ['#ff9800', '#f57c00', '#ef6c00']
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Mapa de Calor - Finalizações',
+                    color: '#e0e0f0'
+                },
+                legend: {
+                    labels: { color: '#e0e0f0' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#a0a0c0' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                x: {
+                    ticks: { color: '#a0a0c0' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                }
+            }
+        }
+    });
+}
+
+function createHeatmapEntriesChart() {
+    const ctx = document.getElementById('heatmapEntriesChart');
+    if (!ctx) return;
+    
+    const homeStats = gameData.stats.home;
+    const awayStats = gameData.stats.away;
+    
+    chartInstances.heatmapEntries = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Esquerda', 'Centro', 'Direita'],
+            datasets: [
+                {
+                    label: `${gameData.homeTeam} - Entradas`,
+                    data: [homeStats.ent_e, homeStats.ent_c, homeStats.ent_d],
+                    backgroundColor: ['#9c27b0', '#8e24aa', '#7b1fa2']
+                },
+                {
+                    label: `${gameData.awayTeam} - Entradas`,
+                    data: [awayStats.ent_e, awayStats.ent_c, awayStats.ent_d],
+                    backgroundColor: ['#ff5722', '#f4511e', '#e64a19']
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Mapa de Calor - Entradas no Último Terço',
+                    color: '#e0e0f0'
+                },
+                legend: {
+                    labels: { color: '#e0e0f0' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#a0a0c0' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                x: {
+                    ticks: { color: '#a0a0c0' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                }
+            }
+        }
+    });
+}
+
+function createZoneDistributionChart() {
+    const ctx = document.getElementById('zoneDistributionChart');
+    if (!ctx) return;
+    
+    const homeStats = gameData.stats.home;
+    const awayStats = gameData.stats.away;
+    
+    const totalHomeZone = homeStats.fin_e + homeStats.fin_c + homeStats.fin_d + homeStats.ent_e + homeStats.ent_c + homeStats.ent_d;
+    const totalAwayZone = awayStats.fin_e + awayStats.fin_c + awayStats.fin_d + awayStats.ent_e + awayStats.ent_c + awayStats.ent_d;
+    
+    chartInstances.zoneDistribution = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: [`${gameData.homeTeam}`, `${gameData.awayTeam}`],
+            datasets: [{
+                data: [totalHomeZone, totalAwayZone],
+                backgroundColor: ['#00bcd4', '#ff9800'],
+                borderColor: ['#00acc1', '#f57c00'],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Distribuição Total por Zona',
+                    color: '#e0e0f0'
+                },
+                legend: {
+                    labels: { color: '#e0e0f0' }
+                },
+                datalabels: {
+                    color: '#fff',
+                    font: { weight: 'bold', size: 14 },
+                    formatter: (value, context) => {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = ((value / total) * 100).toFixed(1);
+                        return `${value}\n(${percentage}%)`;
+                    }
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+}
+
+function createEventsChart() {
+    const ctx = document.getElementById('eventsChart');
+    if (!ctx) return;
+    
+    const homeStats = gameData.stats.home;
+    const awayStats = gameData.stats.away;
+    
+    chartInstances.events = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Gols', 'Escanteios', 'Faltas Ofensivas'], // ✅ CORRIGIDO: "Faltas Ofensivas"
+            datasets: [
+                {
+                    label: gameData.homeTeam,
+                    data: [homeStats.gols, homeStats.esc, homeStats.falta],
+                    backgroundColor: '#00bcd4'
+                },
+                {
+                    label: gameData.awayTeam,
+                    data: [awayStats.gols, awayStats.esc, awayStats.falta],
+                    backgroundColor: '#ff9800'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Eventos Gerais da Partida',
+                    color: '#e0e0f0'
+                },
+                legend: {
+                    labels: { color: '#e0e0f0' }
+                },
+                datalabels: {
+                    color: '#fff',
+                    font: { weight: 'bold' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#a0a0c0' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                x: {
+                    ticks: { color: '#a0a0c0' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+}
+
+function createTimelineChart() {
+    const ctx = document.getElementById('timelineChart');
+    if (!ctx) return;
+    
+    // Agrupar eventos por período de 10 minutos
+    const timeSlots = [];
+    for (let i = 0; i < 100; i += 10) {
+        timeSlots.push(`${i}-${i+10}'`);
     }
-  });
+    
+    const homeEventsByTime = new Array(timeSlots.length).fill(0);
+    const awayEventsByTime = new Array(timeSlots.length).fill(0);
+    
+    gameData.events.forEach(event => {
+        const minute = Math.floor(event.gameTime / 60000);
+        const slotIndex = Math.min(Math.floor(minute / 10), timeSlots.length - 1);
+        
+        if (event.team === 'home') {
+            homeEventsByTime[slotIndex]++;
+        } else {
+            awayEventsByTime[slotIndex]++;
+        }
+    });
+    
+    chartInstances.timeline = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: timeSlots,
+            datasets: [
+                {
+                    label: gameData.homeTeam,
+                    data: homeEventsByTime,
+                    borderColor: '#00bcd4',
+                    backgroundColor: 'rgba(0, 188, 212, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: gameData.awayTeam,
+                    data: awayEventsByTime,
+                    borderColor: '#ff9800',
+                    backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Timeline dos Eventos',
+                    color: '#e0e0f0'
+                },
+                legend: {
+                    labels: { color: '#e0e0f0' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#a0a0c0' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                x: {
+                    ticks: { color: '#a0a0c0' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                }
+            }
+        }
+    });
 }
 
-if (awayTeamInput) {
-  awayTeamInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      saveTeamConfiguration();
+function createEfficiencyChart() {
+    const ctx = document.getElementById('efficiencyChart');
+    if (!ctx) return;
+    
+    const homeStats = gameData.stats.home;
+    const awayStats = gameData.stats.away;
+    
+    const homeTotalShots = homeStats.fin_e + homeStats.fin_c + homeStats.fin_d;
+    const awayTotalShots = awayStats.fin_e + awayStats.fin_c + awayStats.fin_d;
+    
+    const homeEfficiency = homeTotalShots > 0 ? ((homeStats.gols / homeTotalShots) * 100) : 0;
+    const awayEfficiency = awayTotalShots > 0 ? ((awayStats.gols / awayTotalShots) * 100) : 0;
+    
+    chartInstances.efficiency = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Eficiência %', 'Total Finalizações', 'Gols', 'Escanteios', 'Faltas Ofensivas'], // ✅ CORRIGIDO: "Faltas Ofensivas"
+            datasets: [
+                {
+                    label: gameData.homeTeam,
+                    data: [homeEfficiency, homeTotalShots, homeStats.gols, homeStats.esc, homeStats.falta],
+                    backgroundColor: 'rgba(0, 188, 212, 0.2)',
+                    borderColor: '#00bcd4',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#00bcd4'
+                },
+                {
+                    label: gameData.awayTeam,
+                    data: [awayEfficiency, awayTotalShots, awayStats.gols, awayStats.esc, awayStats.falta],
+                    backgroundColor: 'rgba(255, 152, 0, 0.2)',
+                    borderColor: '#ff9800',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#ff9800'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Análise de Eficiência',
+                    color: '#e0e0f0'
+                },
+                legend: {
+                    labels: { color: '#e0e0f0' }
+                }
+            },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    ticks: { color: '#a0a0c0' },
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    pointLabels: { color: '#e0e0f0' }
+                }
+            }
+        }
+    });
+}
+
+// ***** GERAÇÃO DE PDF *****
+function generatePDF() {
+    if (typeof jsPDF === 'undefined' || typeof html2canvas === 'undefined') {
+        alert('❌ Erro: Bibliotecas PDF não carregadas');
+        return;
     }
-  });
+    
+    const { jsPDF } = window.jsPDF;
+    const doc = new jsPDF();
+    
+    // Cabeçalho do PDF com proteção beta
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FUTTAG PRO v3.2 BETA - RELATÓRIO DE ANÁLISE', 20, 20);
+    
+    // ✅ Informações de proteção beta
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Desenvolvido por Carlos Bonin - Juega10 | carlos@juega10.com.br', 20, 28);
+    doc.text('Versão Beta - Uso restrito | Expiração: 31/03/2026', 20, 32); // ✅ CORRIGIDO: 2026
+    
+    // Informações da partida
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    const gameInfo = [
+        `Data/Hora: ${new Date().toLocaleString('pt-BR')}`,
+        `Partida: ${gameData.homeTeam} ${gameData.homeScore} × ${gameData.awayScore} ${gameData.awayTeam}`,
+        `Duração: ${formatTime(gameData.elapsedTime)} (${gameData.currentHalf}°T)`,
+        `Total de Eventos: ${gameData.events.length}`
+    ];
+    
+    let yPos = 45;
+    gameInfo.forEach(info => {
+        doc.text(info, 20, yPos);
+        yPos += 8;
+    });
+    
+    // Estatísticas detalhadas
+    yPos += 10;
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ESTATÍSTICAS DETALHADAS', 20, yPos);
+    
+    yPos += 15;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    
+    const homeStats = gameData.stats.home;
+    const awayStats = gameData.stats.away;
+    
+    const statsData = [
+        ['Estatística', gameData.homeTeam, gameData.awayTeam],
+        ['Gols', homeStats.gols, awayStats.gols],
+        ['Finalizações Esquerda', homeStats.fin_e, awayStats.fin_e],
+        ['Finalizações Centro', homeStats.fin_c, awayStats.fin_c],
+        ['Finalizações Direita', homeStats.fin_d, awayStats.fin_d],
+        ['Entradas Esquerda', homeStats.ent_e, awayStats.ent_e],
+        ['Entradas Centro', homeStats.ent_c, awayStats.ent_c],
+        ['Entradas Direita', homeStats.ent_d, awayStats.ent_d],
+        ['Escanteios', homeStats.esc, awayStats.esc],
+        ['Faltas Ofensivas', homeStats.falta, awayStats.falta] // ✅ CORRIGIDO: "Faltas Ofensivas"
+    ];
+    
+    // Tabela de estatísticas
+    const tableStartY = yPos;
+    const cellHeight = 6;
+    const cellWidth = 50;
+    
+    statsData.forEach((row, index) => {
+        const currentY = tableStartY + (index * cellHeight);
+        
+        // Cabeçalho em negrito
+        if (index === 0) {
+            doc.setFont('helvetica', 'bold');
+        } else {
+            doc.setFont('helvetica', 'normal');
+        }
+        
+        // Células da tabela
+        doc.rect(20, currentY - 4, cellWidth, cellHeight);
+        doc.rect(20 + cellWidth, currentY - 4, cellWidth, cellHeight);
+        doc.rect(20 + (cellWidth * 2), currentY - 4, cellWidth, cellHeight);
+        
+        // Texto
+        doc.text(row[0], 22, currentY);
+        doc.text(String(row[1]), 22 + cellWidth, currentY);
+        doc.text(String(row[2]), 22 + (cellWidth * 2), currentY);
+    });
+    
+    // Lista de eventos
+    yPos = tableStartY + (statsData.length * cellHeight) + 20;
+    
+    if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+    }
+    
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CRONOLOGIA DOS EVENTOS', 20, yPos);
+    
+    yPos += 10;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    
+    gameData.events.slice(-15).forEach(event => { // Últimos 15 eventos
+        const eventText = `${event.formattedTime} - ${event.team === 'home' ? gameData.homeTeam : gameData.awayTeam} - ${event.type.toUpperCase()}${event.zone ? ` (${event.zone.toUpperCase()})` : ''}`;
+        
+        if (yPos > 280) {
+            doc.addPage();
+            yPos = 20;
+        }
+        
+        doc.text(eventText, 20, yPos);
+        yPos += 5;
+    });
+    
+    // Rodapé com proteção
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        doc.text(`FutTag Pro v3.2 Beta - Página ${i}/${pageCount} | © 2024 Juega10`, 20, 290);
+        doc.text('Relatório gerado automaticamente - Versão Beta', 150, 290);
+    }
+    
+    // Salvar PDF
+    const filename = `FutTagPro_${gameData.homeTeam}_vs_${gameData.awayTeam}_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(filename);
+    
+    alert('✅ Relatório PDF gerado com sucesso!\n\n📄 Nome: ' + filename);
 }
 
-// Modal de feedback
-if (btnSendFeedback) btnSendFeedback.addEventListener('click', showFeedbackModal);
-if (feedbackClose) feedbackClose.addEventListener('click', hideFeedbackModal);
-if (btnSubmitFeedback) btnSubmitFeedback.addEventListener('click', submitFeedback);
-if (btnCancelFeedback) btnCancelFeedback.addEventListener('click', hideFeedbackModal);
-
-window.addEventListener('click', (event) => {
-  if (event.target === feedbackModal) {
-    hideFeedbackModal();
-  }
-});
-
-// Exportações
-if (btnGeneratePDF) btnGeneratePDF.addEventListener('click', generatePDFReport);
-if (btnExportXML) btnExportXML.addEventListener('click', exportXML);
-
-// ==================== INICIALIZAÇÃO ====================
-function initializeApp() {
-  console.log('🔄 Inicializando FutTag Pro Beta...');
-  
-  // Verifica expiração do beta
-  if (!checkBetaExpiration()) {
-    return; // Para a execução se expirado
-  }
-  
-  // Verifica acesso beta
-  if (!loadBetaAccess()) {
-    showBetaAccessModal();
-    return; // Para a execução até validar acesso
-  }
-  
-  // Carrega configurações
-  loadTeamNames();
-  initializeEventCounts();
-  
-  // Setup interface
-  updateTeamNamesUI();
-  updateUI();
-  updateTimerDisplay();
-  setupRatingButtons();
-  
-  // Atualiza analytics de uso
-  updateAnalytics('appOpened');
-  
-  console.log('🚀 FutTag Pro Beta inicializado!');
-  console.log(`👤 Usuário: ${appState.beta.accessCode}`);
-  console.log(`🏠 ${appState.teamNames.home} vs ${appState.teamNames.away} ✈️`);
-  console.log(`📊 Jogos: ${appState.beta.analytics.gamesPlayed}, PDFs: ${appState.beta.analytics.pdfsGenerated}`);
+// ***** EXPORTAÇÃO XML *****
+function exportToXML() {
+    const timestamp = new Date().toISOString();
+    const filename = `futtag_${gameData.homeTeam}_vs_${gameData.awayTeam}_${timestamp.split('T')[0]}.xml`;
+    
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<!-- FutTag Pro v3.2 - Exportação XML -->
+<!-- Desenvolvido por Carlos Bonin - Juega10 -->
+<!-- Data: ${new Date().toLocaleString('pt-BR')} -->
+<match>
+    <metadata>
+        <version>FutTag Pro v3.2 BETA</version>
+        <export_time>${timestamp}</export_time>
+        <analyzer>FutTag Pro</analyzer>
+        <developer>Carlos Bonin - Juega10</developer>
+        <contact>carlos@juega10.com.br</contact>
+        <expiration>2026-03-31</expiration>
+    </metadata>
+    <game_info>
+        <home_team>${gameData.homeTeam}</home_team>
+        <away_team>${gameData.awayTeam}</away_team>
+        <final_score>${gameData.homeScore}-${gameData.awayScore}</final_score>
+        <duration>${formatTime(gameData.elapsedTime)}</duration>
+        <last_half>${gameData.currentHalf}</last_half>
+    </game_info>
+    <events>`;
+    
+    gameData.events.forEach(event => {
+        xml += `
+        <event>
+            <id>${event.id}</id>
+            <type>${event.type}</type>
+            <team>${event.team}</team>
+            <zone>${event.zone || 'N/A'}</zone>
+            <half>${event.half}</half>
+            <game_time>${event.formattedTime}</game_time>
+            <timestamp>${new Date(event.timestamp).toISOString()}</timestamp>
+        </event>`;
+    });
+    
+    xml += `
+    </events>
+    <statistics>
+        <home_stats>
+            <team_name>${gameData.homeTeam}</team_name>
+            <goals>${gameData.stats.home.gols}</goals>
+            <shots_left>${gameData.stats.home.fin_e}</shots_left>
+            <shots_center>${gameData.stats.home.fin_c}</shots_center>
+            <shots_right>${gameData.stats.home.fin_d}</shots_right>
+            <entries_left>${gameData.stats.home.ent_e}</entries_left>
+            <entries_center>${gameData.stats.home.ent_c}</entries_center>
+            <entries_right>${gameData.stats.home.ent_d}</entries_right>
+            <corners>${gameData.stats.home.esc}</corners>
+            <offensive_fouls>${gameData.stats.home.falta}</offensive_fouls>
+        </home_stats>
+        <away_stats>
+            <team_name>${gameData.awayTeam}</team_name>
+            <goals>${gameData.stats.away.gols}</goals>
+            <shots_left>${gameData.stats.away.fin_e}</shots_left>
+            <shots_center>${gameData.stats.away.fin_c}</shots_center>
+            <shots_right>${gameData.stats.away.fin_d}</shots_right>
+            <entries_left>${gameData.stats.away.ent_e}</entries_left>
+            <entries_center>${gameData.stats.away.ent_c}</entries_center>
+            <entries_right>${gameData.stats.away.ent_d}</entries_right>
+            <corners>${gameData.stats.away.esc}</corners>
+            <offensive_fouls>${gameData.stats.away.falta}</offensive_fouls>
+        </away_stats>
+    </statistics>
+</match>`;
+    
+    const blob = new Blob([xml], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    alert('✅ Arquivo XML exportado com sucesso!\n\n' + 
+          '📄 Nome: ' + filename + '\n' +
+          '📊 Eventos: ' + gameData.events.length + '\n' +
+          '⚽ Placar: ' + gameData.homeScore + ' × ' + gameData.awayScore);
 }
-
-// Inicializa quando a página carrega
-window.addEventListener('load', initializeApp);
-
-// Previne zoom acidental em iOS
-document.addEventListener('gesturestart', function (e) {
-  e.preventDefault();
-});
-
-// Previne seleção de texto em botões
-document.addEventListener('selectstart', function (e) {
-  if (e.target.closest('.btn')) {
-    e.preventDefault();
-  }
-});
-
-// Previne scroll bounce no iOS
-document.addEventListener('touchmove', function(e) {
-  if (e.target.closest('.modal-content')) {
-    return;
-  }
-  e.preventDefault();
-}, { passive: false });

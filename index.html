@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>FutTag Pro</title>
+  <title>FutTag Pro - Beta 2025</title>
 
   <!-- PWA Metadata -->
   <link rel="manifest" href="./manifest.json">
@@ -221,6 +221,36 @@
     </footer>
   </div>
 
+  <!-- Modal de Acesso Beta -->
+  <div id="betaAccessModal" class="modal">
+    <div class="modal-content beta-access-modal">
+      <h2>🔐 FutTag Pro - Acesso Beta 2025</h2>
+      
+      <div class="beta-access-form">
+        <div class="beta-info">
+          <p><strong>🚀 Programa Beta Exclusivo</strong></p>
+          <p>Software em desenvolvimento para analistas selecionados.</p>
+          <p><strong>⚠️ Versão experimental - Confidencial</strong></p>
+        </div>
+        
+        <div class="input-group">
+          <label for="betaCodeInput">📝 Código de Acesso:</label>
+          <input type="text" id="betaCodeInput" class="beta-input" placeholder="Digite seu código..." maxlength="20">
+          <small class="input-hint">Código fornecido por Bonin</small>
+        </div>
+        
+        <div class="beta-buttons">
+          <button id="btnValidateBeta" class="btn beta-btn validate">🔑 Validar Acesso</button>
+        </div>
+        
+        <div class="beta-footer">
+          <p><strong>📧 Contato:</strong> bonin@futtagpro.com</p>
+          <p><strong>⏰ Beta válido até:</strong> 31/03/2025</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal de Configuração das Equipes -->
   <div id="teamConfigModal" class="modal">
     <div class="modal-content team-config-modal">
@@ -256,7 +286,7 @@
   <div id="statsModal" class="modal">
     <div class="modal-content">
       <span class="close-button">&times;</span>
-      <h2>Estatísticas do Jogo</h2>
+      <h2>📊 Estatísticas do Jogo</h2>
       
       <!-- Container para gráficos temporários (não visíveis) -->
       <div id="chartsContainer" style="display: none;">
@@ -286,6 +316,54 @@
       <div class="stats-export-options">
         <button id="btnGeneratePDF" class="btn action-btn export">📄 Gerar Relatório PDF</button>
         <button id="btnExportXML" class="btn action-btn export">📁 Exportar XML</button>
+        <button id="btnSendFeedback" class="btn action-btn feedback">💬 Enviar Feedback</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Feedback -->
+  <div id="feedbackModal" class="modal">
+    <div class="modal-content feedback-modal">
+      <span class="close-button" id="feedbackClose">&times;</span>
+      <h2>💬 Feedback - FutTag Pro Beta</h2>
+      
+      <div class="feedback-form">
+        <div class="input-group">
+          <label for="feedbackName">👤 Seu Nome/Clube:</label>
+          <input type="text" id="feedbackName" placeholder="Ex: João Silva - Flamengo" maxlength="50">
+        </div>
+        
+        <div class="input-group">
+          <label for="feedbackType">📋 Tipo de Feedback:</label>
+          <select id="feedbackType">
+            <option value="bug">🐛 Bug/Erro</option>
+            <option value="feature">🚀 Nova Funcionalidade</option>
+            <option value="improvement">⚡ Melhoria</option>
+            <option value="general">💭 Comentário Geral</option>
+          </select>
+        </div>
+        
+        <div class="input-group">
+          <label for="feedbackRating">⭐ Avaliação Geral:</label>
+          <div class="rating-buttons">
+            <button type="button" class="rating-btn" data-rating="1">1⭐</button>
+            <button type="button" class="rating-btn" data-rating="2">2⭐</button>
+            <button type="button" class="rating-btn" data-rating="3">3⭐</button>
+            <button type="button" class="rating-btn" data-rating="4">4⭐</button>
+            <button type="button" class="rating-btn" data-rating="5">5⭐</button>
+          </div>
+        </div>
+        
+        <div class="input-group">
+          <label for="feedbackMessage">💭 Sua Mensagem:</label>
+          <textarea id="feedbackMessage" rows="4" placeholder="Descreva sua experiência, sugestões ou problemas encontrados..." maxlength="500"></textarea>
+          <small class="input-hint">Máximo 500 caracteres</small>
+        </div>
+        
+        <div class="feedback-buttons">
+          <button id="btnSubmitFeedback" class="btn feedback-btn submit">📤 Enviar Feedback</button>
+          <button id="btnCancelFeedback" class="btn feedback-btn cancel">❌ Cancelar</button>
+        </div>
       </div>
     </div>
   </div>

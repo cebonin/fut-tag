@@ -1,7 +1,30 @@
 // ======================================================
-// FutTag Pro - app.js v3.1 - Corrigido e Funcional
+// FutTag Pro - app.js v3.2 - Proteção Beta Simplificada
 // Developed by Carlos Bonin
 // ======================================================
+
+// ==================== CONFIGURAÇÕES DE PROTEÇÃO ====================
+const BETA_CONFIG = {
+  // Códigos de acesso beta (fácil de alterar)
+  validCodes: [
+    'BONIN2025',      // Código principal
+    'ANALYST01',      // Analista 1
+    'ANALYST02',      // Analista 2
+    'ANALYST03',      // Analista 3
+    'SCOUT2025',      // Scout
+    'COACH2025',      // Treinador
+    'BETA2025'        // Código geral
+  ],
+  
+  // Data de expiração (fácil de alterar)
+  expirationDate: '2025-03-31',
+  
+  // Informações de contato
+  contact: {
+    email: 'bonin@futtagpro.com',
+    whatsapp: '(92) 99999-9999'
+  }
+};
 
 // ==================== APLICATIVO DE ESTADO ====================
 const appState = {
@@ -9,24 +32,37 @@ const appState = {
     home: 0,
     away: 0
   },
-  currentHalf: 1, // 1 ou 2
+  currentHalf: 1,
   timer: {
     isRunning: false,
     startEpoch: 0,
     elapsedMs: 0,
     rafId: null
   },
-  events: [],      // Armazena todos os eventos registrados
-  eventCounts: {   // Contagem atual de cada tipo de evento
-    total: {},     // Contadores totais
-    half1: {},     // Contadores do 1° tempo
-    half2: {}      // Contadores do 2° tempo
+  events: [],
+  eventCounts: {
+    total: {},
+    half1: {},
+    half2: {}
   },
   lastAction: null,
-  // Novos campos para nomes das equipes
   teamNames: {
     home: 'CASA',
     away: 'VISITANTE'
+  },
+  
+  // Dados de proteção
+  beta: {
+    accessCode: null,
+    isValid: false,
+    firstAccess: null,
+    analytics: {
+      gamesPlayed: 0,
+      pdfsGenerated: 0,
+      xmlsExported: 0,
+      feedbacksSent: 0,
+      lastUsed: null
+    }
   }
 };
 
@@ -41,6 +77,11 @@ const btnResetAll = document.getElementById('btnResetAll');
 const btnUndo = document.getElementById('btnUndo');
 const btnShowStats = document.getElementById('btnShowStats');
 const btnTeamConfig = document.getElementById('btnTeamConfig');
+
+// Modal de acesso beta
+const betaAccessModal = document.getElementById('betaAccessModal');
+const betaCodeInput = document.getElementById('betaCodeInput');
+const btnValidateBeta = document.getElementById('btnValidateBeta');
 
 // Modal de configuração das equipes
 const teamConfigModal = document.getElementById('teamConfigModal');
@@ -59,6 +100,16 @@ const statsModal = document.getElementById('statsModal');
 const closeButton = document.querySelector('#statsModal .close-button');
 const btnGeneratePDF = document.getElementById('btnGeneratePDF');
 const btnExportXML = document.getElementById('btnExportXML');
+const btnSendFeedback = document.getElementById('btnSendFeedback');
+
+// Modal de feedback
+const feedbackModal = document.getElementById('feedbackModal');
+const feedbackClose = document.getElementById('feedbackClose');
+const feedbackName = document.getElementById('feedbackName');
+const feedbackType = document.getElementById('feedbackType');
+const feedbackMessage = document.getElementById('feedbackMessage');
+const btnSubmitFeedback = document.getElementById('btnSubmitFeedback');
+const btnCancelFeedback = document.getElementById('btnCancelFeedback');
 
 // Summary elements
 const finSummary = document.getElementById('finSummary');
@@ -76,6 +127,213 @@ const ALL_EVENT_CODES = [
   'ENT_AWAY_ESQ', 'ENT_AWAY_CTR', 'ENT_AWAY_DIR',
   'GOL_AWAY', 'ESC_DEF_AWAY', 'FALTA_DEF_AWAY'
 ];
+
+// ==================== SISTEMA DE PROTEÇÃO BETA ====================
+
+function checkBetaExpiration() {
+  const today = new Date();
+  const expiration = new Date(BETA_CONFIG.expirationDate);
+  
+  if (today > expiration) {
+    alert(`⚠️ Esta versão beta expirou em ${expiration.toLocaleDateString('pt-BR')}.\n\nPara continuar usando o FutTag Pro, entre em contato:\n📧 ${BETA_CONFIG.contact.email}\n📱 ${BETA_CONFIG.contact.whatsapp}`);
+    return false;
+  }
+  return true;
+}
+
+function loadBetaAccess() {
+  try {
+    const savedBeta = localStorage.getItem('futtag_beta_access');
+    if (savedBeta) {
+      const betaData = JSON.parse(savedBeta);
+      appState.beta = { ...appState.beta, ...betaData };
+      
+      // Verifica se o código ainda é válido
+      if (BETA_CONFIG.validCodes.includes(appState.beta.accessCode)) {
+        appState.beta.isValid = true;
+        return true;
+      }
+    }
+  } catch (error) {
+    console.warn('Erro ao carregar acesso beta:', error);
+  }
+  
+  appState.beta.isValid = false;
+  return false;
+}
+
+function saveBetaAccess() {
+  try {
+    localStorage.setItem('futtag_beta_access', JSON.stringify(appState.beta));
+  } catch (error) {
+    console.warn('Erro ao salvar acesso beta:', error);
+  }
+}
+
+function validateBetaCode() {
+  const inputCode = betaCodeInput.value.trim().toUpperCase();
+  
+  if (!inputCode) {
+    alert('⚠️ Por favor, digite um código de acesso.');
+    return;
+  }
+  
+  if (BETA_CONFIG.validCodes.includes(inputCode)) {
+    // Código válido
+    appState.beta.accessCode = inputCode;
+    appState.beta.isValid = true;
+    appState.beta.firstAccess = new Date().toISOString();
+    appState.beta.analytics.lastUsed = new Date().toISOString();
+    
+    saveBetaAccess();
+    hideBetaAccessModal();
+    
+    triggerHapticFeedback();
+    alert('✅ Acesso liberado! Bem-vindo ao FutTag Pro Beta 2025.\n\n🔥 Aproveite para testar todas as funcionalidades!');
+    
+    // Analytics: registra primeiro acesso
+    updateAnalytics('firstAccess');
+    
+  } else {
+    alert('❌ Código inválido.\n\nVerifique o código fornecido ou entre em contato:\n📧 ' + BETA_CONFIG.contact.email);
+    betaCodeInput.value = '';
+    betaCodeInput.focus();
+  }
+}
+
+function showBetaAccessModal() {
+  if (betaAccessModal) {
+    betaAccessModal.style.display = 'block';
+    if (betaCodeInput) betaCodeInput.focus();
+  }
+}
+
+function hideBetaAccessModal() {
+  if (betaAccessModal) {
+    betaAccessModal.style.display = 'none';
+  }
+}
+
+function updateAnalytics(action) {
+  const analytics = appState.beta.analytics;
+  analytics.lastUsed = new Date().toISOString();
+  
+  switch (action) {
+    case 'gameStarted':
+      analytics.gamesPlayed++;
+      break;
+    case 'pdfGenerated':
+      analytics.pdfsGenerated++;
+      break;
+    case 'xmlExported':
+      analytics.xmlsExported++;
+      break;
+    case 'feedbackSent':
+      analytics.feedbacksSent++;
+      break;
+  }
+  
+  saveBetaAccess();
+  
+  // Log para debug (remover em produção)
+  console.log('📊 Analytics updated:', action, analytics);
+}
+
+// ==================== SISTEMA DE FEEDBACK ====================
+
+let selectedRating = 0;
+
+function setupRatingButtons() {
+  const ratingButtons = document.querySelectorAll('.rating-btn');
+  ratingButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Remove seleção anterior
+      ratingButtons.forEach(b => b.classList.remove('selected'));
+      
+      // Adiciona seleção atual
+      btn.classList.add('selected');
+      selectedRating = parseInt(btn.dataset.rating);
+    });
+  });
+}
+
+function showFeedbackModal() {
+  triggerHapticFeedback();
+  if (feedbackModal) {
+    // Pre-preenche com dados do usuário
+    if (feedbackName && appState.beta.accessCode) {
+      feedbackName.value = `Usuário ${appState.beta.accessCode}`;
+    }
+    
+    feedbackModal.style.display = 'block';
+  }
+}
+
+function hideFeedbackModal() {
+  if (feedbackModal) {
+    feedbackModal.style.display = 'none';
+    
+    // Limpa formulário
+    if (feedbackName) feedbackName.value = '';
+    if (feedbackMessage) feedbackMessage.value = '';
+    if (feedbackType) feedbackType.selectedIndex = 0;
+    
+    // Remove seleção de rating
+    document.querySelectorAll('.rating-btn').forEach(btn => {
+      btn.classList.remove('selected');
+    });
+    selectedRating = 0;
+  }
+}
+
+function submitFeedback() {
+  const name = feedbackName ? feedbackName.value.trim() : '';
+  const type = feedbackType ? feedbackType.value : '';
+  const message = feedbackMessage ? feedbackMessage.value.trim() : '';
+  
+  if (!message) {
+    alert('⚠️ Por favor, escreva sua mensagem de feedback.');
+    return;
+  }
+  
+  if (selectedRating === 0) {
+    alert('⚠️ Por favor, selecione uma avaliação (estrelas).');
+    return;
+  }
+  
+  // Prepara dados do feedback
+  const feedbackData = {
+    timestamp: new Date().toISOString(),
+    betaCode: appState.beta.accessCode,
+    name: name || 'Anônimo',
+    type: type,
+    rating: selectedRating,
+    message: message,
+    analytics: { ...appState.beta.analytics },
+    userAgent: navigator.userAgent,
+    url: window.location.href
+  };
+  
+  // Simula envio (em produção, enviar para API/email)
+  console.log('📤 Feedback enviado:', feedbackData);
+  
+  // Salva feedback localmente para debug
+  try {
+    const savedFeedbacks = JSON.parse(localStorage.getItem('futtag_feedbacks') || '[]');
+    savedFeedbacks.push(feedbackData);
+    localStorage.setItem('futtag_feedbacks', JSON.stringify(savedFeedbacks));
+  } catch (error) {
+    console.warn('Erro ao salvar feedback:', error);
+  }
+  
+  // Atualiza analytics
+  updateAnalytics('feedbackSent');
+  
+  hideFeedbackModal();
+  triggerHapticFeedback();
+  
+  alert('✅ Feedback enviado com sucesso!\n\n🙏 Obrigado por contribuir para o desenvolvimento do FutTag Pro.\n\nSuas sugestões são muito importantes!');
+}
 
 // ==================== GERENCIAMENTO DOS NOMES DAS EQUIPES ====================
 function loadTeamNames() {
@@ -104,7 +362,6 @@ function updateTeamNamesUI() {
   if (homeTeamName) homeTeamName.textContent = appState.teamNames.home;
   if (awayTeamName) awayTeamName.textContent = appState.teamNames.away;
   
-  // Atualiza também os inputs do modal
   if (homeTeamInput) homeTeamInput.value = appState.teamNames.home;
   if (awayTeamInput) awayTeamInput.value = appState.teamNames.away;
 }
@@ -159,16 +416,6 @@ function resetTeamConfiguration() {
   }
 }
 
-function checkFirstRun() {
-  const hasConfigured = localStorage.getItem('futtag_team_names');
-  if (!hasConfigured) {
-    // Primeira execução - mostra modal automaticamente
-    setTimeout(() => {
-      showTeamConfigModal();
-    }, 500);
-  }
-}
-
 // ==================== FUNÇÕES UTILITÁRIAS ====================
 function formatTimeMMSS(ms) {
   const totalSeconds = Math.floor(ms / 1000);
@@ -185,20 +432,16 @@ function getCurrentTimeSeconds() {
 }
 
 function updateUI() {
-  // Atualiza placar
   if (scoreHomeDisplay) scoreHomeDisplay.textContent = appState.score.home;
   if (scoreAwayDisplay) scoreAwayDisplay.textContent = appState.score.away;
 
-  // Atualiza contadores dos badges
   document.querySelectorAll('.count-badge').forEach(badge => {
     const code = badge.dataset.counter;
     badge.textContent = appState.eventCounts.total[code] || 0;
   });
 
-  // Atualiza display de tempo de jogo
   if (currentHalfDisplay) currentHalfDisplay.textContent = `${appState.currentHalf}°T`;
 
-  // Atualiza botões de half
   document.querySelectorAll('.half-btn').forEach(btn => {
     const half = parseInt(btn.dataset.half);
     btn.classList.remove('active');
@@ -207,7 +450,6 @@ function updateUI() {
     }
   });
 
-  // Atualiza o texto do botão Iniciar/Pausar
   if (btnToggleTimer) {
     if (appState.timer.isRunning) {
       btnToggleTimer.textContent = 'Pausar';
@@ -216,12 +458,10 @@ function updateUI() {
     }
   }
 
-  // Desabilita Undo se não há eventos
   if (btnUndo) {
     btnUndo.disabled = appState.events.length === 0;
   }
   
-  // Atualiza summary no modal se estiver visível
   updateStatsSummary();
 }
 
@@ -232,22 +472,18 @@ function updateStatsSummary() {
   const homeTeamName = appState.teamNames.home;
   const awayTeamName = appState.teamNames.away;
   
-  // Finalizações
   const homeFins = (counts['FIN_HOME_ESQ'] || 0) + (counts['FIN_HOME_CTR'] || 0) + (counts['FIN_HOME_DIR'] || 0);
   const awayFins = (counts['FIN_AWAY_ESQ'] || 0) + (counts['FIN_AWAY_CTR'] || 0) + (counts['FIN_AWAY_DIR'] || 0);
   finSummary.textContent = `${homeTeamName}: ${homeFins} | ${awayTeamName}: ${awayFins}`;
   
-  // Entradas
   const homeEnts = (counts['ENT_HOME_ESQ'] || 0) + (counts['ENT_HOME_CTR'] || 0) + (counts['ENT_HOME_DIR'] || 0);
   const awayEnts = (counts['ENT_AWAY_ESQ'] || 0) + (counts['ENT_AWAY_CTR'] || 0) + (counts['ENT_AWAY_DIR'] || 0);
   entSummary.textContent = `${homeTeamName}: ${homeEnts} | ${awayTeamName}: ${awayEnts}`;
   
-  // Escanteios
   const homeEscs = counts['ESC_OF_HOME'] || 0;
   const awayEscs = counts['ESC_DEF_AWAY'] || 0;
   escSummary.textContent = `${homeTeamName}: ${homeEscs} | ${awayTeamName}: ${awayEscs}`;
   
-  // Faltas
   const homeFaltas = counts['FALTA_OF_HOME'] || 0;
   const awayFaltas = counts['FALTA_DEF_AWAY'] || 0;
   faltaSummary.textContent = `${homeTeamName}: ${homeFaltas} | ${awayTeamName}: ${awayFaltas}`;
@@ -282,6 +518,11 @@ function startTimer() {
   appState.timer.startEpoch = performance.now();
   updateUI();
   tick();
+  
+  // Analytics: registra início de jogo
+  if (appState.timer.elapsedMs === 0) {
+    updateAnalytics('gameStarted');
+  }
 }
 
 function pauseTimer() {
@@ -355,22 +596,18 @@ function recordEventClick(code) {
   const currentTimeSec = getCurrentTimeSeconds();
   const currentHalf = appState.currentHalf;
 
-  // Salva estado anterior
   const previousCounts = JSON.parse(JSON.stringify(appState.eventCounts));
   const previousScore = { ...appState.score };
 
-  // Atualiza contadores
   appState.eventCounts.total[code] = (appState.eventCounts.total[code] || 0) + 1;
   appState.eventCounts[`half${currentHalf}`][code] = (appState.eventCounts[`half${currentHalf}`][code] || 0) + 1;
 
-  // Lógica para gols
   if (code === 'GOL_HOME') {
     appState.score.home++;
   } else if (code === 'GOL_AWAY') {
     appState.score.away++;
   }
 
-  // Registra o evento
   const clipStartSec = Math.max(0, currentTimeSec - 25);
   const clipEndSec = currentTimeSec + 10;
 
@@ -441,7 +678,6 @@ function resetAll() {
 // ==================== GERAÇÃO DE GRÁFICOS PARA PDF ====================
 let chartsInstances = {};
 
-// Registra o plugin DataLabels globalmente se disponível
 if (typeof ChartDataLabels !== 'undefined') {
   Chart.register(ChartDataLabels);
 }
@@ -455,13 +691,11 @@ function createChartForPDF(canvasId, title, data, chartType = 'bar', hideLegend 
   
   const ctx = canvas.getContext('2d');
   
-  // Define fundo branco para o canvas antes de criar o gráfico
   ctx.save();
   ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.restore();
 
-  // Destroi gráfico anterior se existir
   if (chartsInstances[canvasId]) {
     chartsInstances[canvasId].destroy();
   }
@@ -564,7 +798,6 @@ function createChartForPDF(canvasId, title, data, chartType = 'bar', hideLegend 
   }
 }
 
-// Função para obter dados por período
 function getDataByPeriod(codes, period) {
   const counts = appState.eventCounts[period];
   return codes.reduce((sum, code) => sum + (counts[code] || 0), 0);
@@ -727,10 +960,8 @@ async function generatePDFReport() {
     triggerHapticFeedback();
     console.log('🔄 Iniciando geração do PDF...');
     
-    // Gera todos os gráficos
     generateAllCharts();
     
-    // Aguarda renderização
     await new Promise(resolve => setTimeout(resolve, 2000)); 
     console.log('⏰ Aguardando renderização...');
     
@@ -743,7 +974,6 @@ async function generatePDFReport() {
     const chartPdfWidth = 180;
     const chartPdfHeight = 60;
 
-    // Função auxiliar para capturar canvas como imagem
     function getCanvasImageData(canvasId) {
       const canvas = document.getElementById(canvasId);
       if (!canvas) {
@@ -752,7 +982,6 @@ async function generatePDFReport() {
       return canvas.toDataURL('image/png', 1.0);
     }
     
-    // Calcula totais para exibir no PDF
     const getTotals = (codesHome, codesAway, period) => {
       const counts = appState.eventCounts[period];
       const totalHome = codesHome.reduce((acc, code) => acc + (counts[code] || 0), 0);
@@ -760,10 +989,32 @@ async function generatePDFReport() {
       return `Total ${appState.teamNames.home}: ${totalHome} | Total ${appState.teamNames.away}: ${totalAway}`;
     };
 
+    // === CABEÇALHO DE PROTEÇÃO ===
+    function addProtectionHeader(pdf, pageNum) {
+      // Marca de proteção no cabeçalho
+      pdf.setFontSize(8);
+      pdf.setTextColor(150, 150, 150);
+      pdf.text(`FutTag Pro BETA © 2025 - Usuário: ${appState.beta.accessCode}`, margin, 8);
+      pdf.text(`Gerado em: ${new Date().toLocaleString('pt-BR')} | Página ${pageNum}`, pageWidth - margin, 8, { align: 'right' });
+      
+      // Linha de separação
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(margin, 12, pageWidth - margin, 12);
+    }
+
+    // === RODAPÉ DE PROTEÇÃO ===
+    function addProtectionFooter(pdf) {
+      pdf.setFontSize(7);
+      pdf.setTextColor(100, 100, 100);
+      pdf.text('VERSÃO BETA - NÃO DISTRIBUIR - Contato: bonin@futtagpro.com', pageWidth/2, pageHeight - 5, { align: 'center' });
+    }
+
     // --- PAGE 1: FINALIZAÇÕES ---
     console.log('📄 Gerando página 1 - Finalizações...');
     
-    let yCurrent = 20;
+    addProtectionHeader(pdf, 1);
+    
+    let yCurrent = 25;
     pdf.setFontSize(20);
     pdf.setTextColor(0, 0, 0); 
     pdf.text('ESTATÍSTICAS DO JOGO', pageWidth/2, yCurrent, { align: 'center' });
@@ -806,16 +1057,14 @@ async function generatePDFReport() {
       }
     }
     
-    // Rodapé
-    pdf.setFontSize(8);
-    pdf.setTextColor(100, 100, 100);
-    pdf.text('FutTag Pro', pageWidth - margin, pageHeight - 10, { align: 'right' });
+    addProtectionFooter(pdf);
 
     // --- PAGE 2: ENTRADAS NO ÚLTIMO TERÇO ---
     console.log('📄 Gerando página 2 - Entradas...');
     pdf.addPage();
-    yCurrent = 25;
+    addProtectionHeader(pdf, 2);
     
+    yCurrent = 30;
     pdf.setFontSize(16);
     pdf.setTextColor(156, 39, 176);
     pdf.text('ENTRADAS NO ÚLTIMO TERÇO', pageWidth/2, yCurrent, { align: 'center' });
@@ -847,16 +1096,14 @@ async function generatePDFReport() {
       }
     }
 
-    // Rodapé
-    pdf.setFontSize(8);
-    pdf.setTextColor(100, 100, 100);
-    pdf.text('FutTag Pro', pageWidth - margin, pageHeight - 10, { align: 'right' });
+    addProtectionFooter(pdf);
     
     // --- PAGE 3: ESCANTEIOS E FALTAS LATERAIS ---
     console.log('📄 Gerando página 3 - Escanteios e Faltas...');
     pdf.addPage();
-    yCurrent = 25;
+    addProtectionHeader(pdf, 3);
     
+    yCurrent = 30;
     pdf.setFontSize(16);
     pdf.setTextColor(33, 150, 243);
     pdf.text('ESCANTEIOS E FALTAS LATERAIS', pageWidth/2, yCurrent, { align: 'center' });
@@ -880,7 +1127,6 @@ async function generatePDFReport() {
         pdf.addImage(canvasImg, 'PNG', margin, yCurrent, chartPdfWidth, chartPdfHeight);
         yCurrent += chartPdfHeight;
         
-        // Exibe totais de escanteios e faltas separadamente
         const totalEscanteios = getTotals(chart.codesHome, chart.codesAway, chart.period);
         const totalFaltas = getTotals(chart.codesHome_FL, chart.codesAway_FL, chart.period);
         pdf.setFontSize(10);
@@ -892,10 +1138,7 @@ async function generatePDFReport() {
       }
     }
     
-    // Rodapé
-    pdf.setFontSize(8);
-    pdf.setTextColor(100, 100, 100);
-    pdf.text('FutTag Pro', pageWidth - margin, pageHeight - 10, { align: 'right' });
+    addProtectionFooter(pdf);
 
     // Salva o PDF
     const filename = `futtag_${appState.teamNames.home}_vs_${appState.teamNames.away}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.pdf`;
@@ -908,14 +1151,16 @@ async function generatePDFReport() {
     });
     chartsInstances = {};
     
+    // Analytics: registra PDF gerado
+    updateAnalytics('pdfGenerated');
+    
     console.log('✅ PDF gerado com sucesso!');
-    alert('📄 Relatório PDF gerado com sucesso!');
+    alert('📄 Relatório PDF gerado com sucesso!\n\n📊 Analytics: PDF #' + appState.beta.analytics.pdfsGenerated);
     
   } catch (error) {
     console.error('❌ Erro detalhado na geração do PDF:', error);
     alert(`❌ Erro ao gerar PDF: ${error.message}`);
     
-    // Limpa gráficos em caso de erro
     Object.values(chartsInstances).forEach(chart => {
       if (chart) chart.destroy();
     });
@@ -975,7 +1220,7 @@ const rowDefinitions = [
 function buildLiveTagProXml() {
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
   xml += '<file>\n';
-  xml += `    <!--Generated by FutTag Pro - ${appState.teamNames.home} vs ${appState.teamNames.away}-->\n`;
+  xml += `    <!--Generated by FutTag Pro BETA - User: ${appState.beta.accessCode} - ${appState.teamNames.home} vs ${appState.teamNames.away}-->\n`;
   xml += '    <SORT_INFO>\n';
   xml += '        <sort_type>sort order</sort_type>\n';
   xml += '    </SORT_INFO>\n';
@@ -1029,6 +1274,11 @@ function exportXML() {
   downloadLink.click();
   document.body.removeChild(downloadLink);
   URL.revokeObjectURL(downloadLink.href);
+  
+  // Analytics: registra XML exportado
+  updateAnalytics('xmlExported');
+  
+  alert('📁 Arquivo XML exportado com sucesso!\n\n📊 Analytics: XML #' + appState.beta.analytics.xmlsExported);
 }
 
 // ==================== FUNÇÕES DE MODAL ====================
@@ -1045,7 +1295,6 @@ function hideStatsModal() {
     statsModal.style.display = 'none';
   }
   
-  // Limpa os gráficos para liberar memória
   Object.values(chartsInstances).forEach(chart => {
     if (chart) chart.destroy();
   });
@@ -1092,6 +1341,16 @@ document.querySelectorAll('.event-btn').forEach(btn => {
   });
 });
 
+// Modal de acesso beta
+if (btnValidateBeta) btnValidateBeta.addEventListener('click', validateBetaCode);
+if (betaCodeInput) {
+  betaCodeInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      validateBetaCode();
+    }
+  });
+}
+
 // Modal de estatísticas
 if (closeButton) closeButton.addEventListener('click', hideStatsModal);
 window.addEventListener('click', (event) => {
@@ -1105,14 +1364,12 @@ if (teamConfigClose) teamConfigClose.addEventListener('click', hideTeamConfigMod
 if (btnSaveTeamConfig) btnSaveTeamConfig.addEventListener('click', saveTeamConfiguration);
 if (btnResetTeamConfig) btnResetTeamConfig.addEventListener('click', resetTeamConfiguration);
 
-// Fecha modal de configuração ao clicar fora
 window.addEventListener('click', (event) => {
   if (event.target === teamConfigModal) {
     hideTeamConfigModal();
   }
 });
 
-// Enter nos inputs para salvar
 if (homeTeamInput) {
   homeTeamInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
@@ -1129,32 +1386,54 @@ if (awayTeamInput) {
   });
 }
 
+// Modal de feedback
+if (btnSendFeedback) btnSendFeedback.addEventListener('click', showFeedbackModal);
+if (feedbackClose) feedbackClose.addEventListener('click', hideFeedbackModal);
+if (btnSubmitFeedback) btnSubmitFeedback.addEventListener('click', submitFeedback);
+if (btnCancelFeedback) btnCancelFeedback.addEventListener('click', hideFeedbackModal);
+
+window.addEventListener('click', (event) => {
+  if (event.target === feedbackModal) {
+    hideFeedbackModal();
+  }
+});
+
 // Exportações
 if (btnGeneratePDF) btnGeneratePDF.addEventListener('click', generatePDFReport);
 if (btnExportXML) btnExportXML.addEventListener('click', exportXML);
 
 // ==================== INICIALIZAÇÃO ====================
 function initializeApp() {
-  console.log('🔄 Inicializando FutTag Pro...');
+  console.log('🔄 Inicializando FutTag Pro Beta...');
   
-  // Carrega nomes das equipes salvos
+  // Verifica expiração do beta
+  if (!checkBetaExpiration()) {
+    return; // Para a execução se expirado
+  }
+  
+  // Verifica acesso beta
+  if (!loadBetaAccess()) {
+    showBetaAccessModal();
+    return; // Para a execução até validar acesso
+  }
+  
+  // Carrega configurações
   loadTeamNames();
-  
-  // Inicializa contadores
   initializeEventCounts();
-
-  // Atualiza UI inicial
+  
+  // Setup interface
   updateTeamNamesUI();
   updateUI();
   updateTimerDisplay();
-
-  // Verifica se é a primeira execução
-  checkFirstRun();
-
-  console.log('🚀 FutTag Pro v3.1 inicializado com sucesso!');
-  console.log('⚽ Sistema de nomes customizáveis implementado');
-  console.log(`🏠 Time da casa: ${appState.teamNames.home}`);
-  console.log(`✈️ Time visitante: ${appState.teamNames.away}`);
+  setupRatingButtons();
+  
+  // Atualiza analytics de uso
+  updateAnalytics('appOpened');
+  
+  console.log('🚀 FutTag Pro Beta inicializado!');
+  console.log(`👤 Usuário: ${appState.beta.accessCode}`);
+  console.log(`🏠 ${appState.teamNames.home} vs ${appState.teamNames.away} ✈️`);
+  console.log(`📊 Jogos: ${appState.beta.analytics.gamesPlayed}, PDFs: ${appState.beta.analytics.pdfsGenerated}`);
 }
 
 // Inicializa quando a página carrega
@@ -1175,7 +1454,6 @@ document.addEventListener('selectstart', function (e) {
 // Previne scroll bounce no iOS
 document.addEventListener('touchmove', function(e) {
   if (e.target.closest('.modal-content')) {
-    // Permite scroll no modal
     return;
   }
   e.preventDefault();

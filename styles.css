@@ -25,6 +25,10 @@
   --stats-action-bg: #673ab7; /* Roxo escuro para stats */
   --config-action-bg: #795548; /* Marrom para configuração */
   --export-action-bg: #009688; /* Verde água para exportar */
+  --feedback-btn-bg: #ff7f50; /* Laranja coral para feedback */
+  --feedback-btn-submit-bg: #28a745; /* Verde para feedback enviar */
+  --feedback-btn-cancel-bg: #dc3545; /* Vermelho para feedback cancelar */
+  --beta-validate-bg: #1e90ff; /* Azul para validar beta */
 
   --gap: 8px;
   --radius: 10px;
@@ -59,7 +63,6 @@ body {
   align-items: center;
   flex-shrink: 0; /* Não encolhe */
 }
-
 .half-controls {
   display: flex;
   gap: calc(var(--gap) / 2);
@@ -107,7 +110,6 @@ body {
   font-weight: 900;
   letter-spacing: 0.05em;
 }
-
 .timer-display {
   font-size: 1.2rem;
   font-weight: 800;
@@ -138,7 +140,6 @@ body {
   gap: var(--gap);
   min-height: 0; /* Permite que encolha */
 }
-
 .team-name {
   text-align: center;
   font-size: 1.1rem;
@@ -177,7 +178,6 @@ body {
   gap: var(--gap);
   grid-row: 4;
 }
-
 /* Buttons Base Style */
 .btn {
   border: none;
@@ -245,7 +245,6 @@ body {
 }
 .esc-of, .esc-def { background-color: var(--btn-esc-bg); }
 .falta-of, .falta-def { background-color: var(--btn-falta-bg); }
-
 /* Count Badges */
 .count-badge {
   position: absolute;
@@ -294,8 +293,9 @@ body {
 .action-btn.stats { background-color: var(--stats-action-bg); }
 .action-btn.config { background-color: var(--config-action-bg); }
 .action-btn.export { background-color: var(--export-action-bg); }
+.action-btn.feedback { background-color: var(--feedback-btn-bg); }
 
-/* Modal Styles */
+/* Modal Styles - Geral */
 .modal {
   display: none;
   position: fixed;
@@ -307,8 +307,8 @@ body {
   overflow: auto;
   background-color: rgba(0,0,0,0.9);
   padding: var(--gap);
+  backdrop-filter: blur(5px); /* Efeito de blur no fundo */
 }
-
 .modal-content {
   background-color: var(--panel-bg);
   margin: var(--gap) auto;
@@ -323,6 +323,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--gap);
+  animation: fadeIn 0.3s ease-out; /* Adiciona uma pequena animação */
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .close-button {
@@ -338,13 +344,50 @@ body {
 
 .modal-content h2 {
   text-align: center;
-  color: var(--home-color);
+  color: var(--home-color); /* Pode ser ajustado por modal específico */
   margin-top: 0;
   border-bottom: 1px solid rgba(255,255,255,0.1);
   padding-bottom: var(--gap);
 }
 
-/* Team Config Modal Styles */
+/* Input Group base para modais */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-group label {
+  font-weight: 600;
+  color: var(--text-color);
+  font-size: 1rem;
+}
+
+.modal-input, .modal-select, .modal-textarea {
+  padding: 12px;
+  border: 2px solid var(--btn-default-bg);
+  border-radius: var(--radius);
+  background-color: var(--bg);
+  color: var(--text-color);
+  font-size: 1rem;
+  font-weight: 500;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  width: 100%;
+}
+
+.modal-input:focus, .modal-select:focus, .modal-textarea:focus {
+  outline: none;
+  border-color: var(--home-color); /* Pode ser ajustado por modal */
+  background-color: rgba(0, 188, 212, 0.05); /* Um toque da cor primária */
+}
+
+.input-hint {
+  font-size: 0.8rem;
+  color: var(--muted-text);
+  font-style: italic;
+}
+
+/* Team Config Modal Styles (já existentes e ligeiramente aprimorados) */
 .team-config-modal {
   max-width: 450px;
   max-height: 70vh;
@@ -356,19 +399,7 @@ body {
   gap: 20px;
 }
 
-.team-input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.team-input-group label {
-  font-weight: 600;
-  color: var(--text-color);
-  font-size: 1rem;
-}
-
-.team-input {
+.team-input-group .team-input { /* Aplica os estilos gerais de input de modal */
   padding: 12px;
   border: 2px solid var(--btn-default-bg);
   border-radius: var(--radius);
@@ -379,16 +410,10 @@ body {
   transition: border-color 0.2s ease;
 }
 
-.team-input:focus {
+.team-input-group .team-input:focus {
   outline: none;
   border-color: var(--home-color);
   background-color: rgba(0, 188, 212, 0.05);
-}
-
-.input-hint {
-  font-size: 0.8rem;
-  color: var(--muted-text);
-  font-style: italic;
 }
 
 .config-buttons {
@@ -404,13 +429,13 @@ body {
   font-weight: 600;
 }
 
-.config-btn.save { 
-  background-color: var(--primary-action-bg); 
-  color: #1a1a2e; 
+.config-btn.save {
+  background-color: var(--primary-action-bg);
+  color: #1a1a2e;
 }
 
-.config-btn.reset { 
-  background-color: var(--reset-action-bg); 
+.config-btn.reset {
+  background-color: var(--reset-action-bg);
 }
 
 .config-info {
@@ -427,6 +452,74 @@ body {
   color: var(--muted-text);
 }
 
+/* Beta Access Modal Styles (NOVOS) */
+.beta-access-modal {
+  max-width: 450px;
+  max-height: 80vh;
+}
+.beta-access-modal h2 {
+  color: var(--beta-validate-bg);
+}
+.beta-access-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.beta-info {
+  background-color: var(--bg);
+  padding: 12px;
+  border-radius: var(--radius);
+  border-left: 4px solid var(--away-color); /* Usando laranja para um destaque */
+}
+.beta-info p {
+  margin: 0 0 5px 0;
+  font-size: 0.9rem;
+  color: var(--muted-text);
+}
+.beta-info p strong {
+  color: var(--text-color);
+}
+.beta-input { /* Sobrescreve o estilo geral de input do modal */
+  padding: 12px;
+  border: 2px solid var(--btn-default-bg);
+  border-radius: var(--radius);
+  background-color: var(--bg);
+  color: var(--text-color);
+  font-size: 1rem;
+  font-weight: 500;
+  transition: border-color 0.2s ease;
+}
+.beta-input:focus {
+  outline: none;
+  border-color: var(--beta-validate-bg);
+  background-color: rgba(30, 144, 255, 0.05);
+}
+
+.beta-buttons {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+.beta-btn.validate {
+  background-color: var(--beta-validate-bg);
+  color: #fff;
+  flex-grow: 1;
+  min-height: 45px;
+  font-size: 1rem;
+}
+.beta-footer {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(255,255,255,0.1);
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--muted-text);
+}
+.beta-footer strong {
+  color: var(--text-color);
+}
+
+/* Stats Modal Styles (já existentes) */
 .stats-preview {
   background-color: var(--bg);
   padding: var(--gap);
@@ -442,12 +535,96 @@ body {
 .stats-summary li {
   padding: 4px 0;
   border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 0.95rem;
+  display: flex;
+  justify-content: space-between;
 }
+.stats-summary li strong {
+  color: var(--home-color);
+}
+
 
 .stats-export-options {
   display: flex;
   gap: var(--gap);
   justify-content: center;
+}
+
+/* Feedback Modal Styles (NOVOS) */
+.feedback-modal {
+  max-width: 500px;
+  max-height: 85vh;
+}
+.feedback-modal h2 {
+  color: var(--feedback-btn-bg);
+}
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.feedback-form .input-group input,
+.feedback-form .input-group select,
+.feedback-form .input-group textarea { /* Aplica os estilos gerais de input do modal */
+  border: 2px solid var(--btn-default-bg);
+  border-radius: var(--radius);
+  background-color: var(--bg);
+  color: var(--text-color);
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 12px;
+  width: 100%;
+}
+.feedback-form .input-group input:focus,
+.feedback-form .input-group select:focus,
+.feedback-form .input-group textarea:focus {
+  outline: none;
+  border-color: var(--feedback-btn-bg);
+  background-color: rgba(255, 127, 80, 0.05);
+}
+.rating-buttons {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  padding: 5px 0;
+}
+.rating-btn {
+  background-color: var(--btn-default-bg);
+  color: var(--muted-text);
+  border-radius: 5px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+  min-width: 60px;
+  flex-grow: 1;
+}
+.rating-btn:hover {
+  background-color: rgba(255, 127, 80, 0.3);
+  color: var(--text-color);
+}
+.rating-btn.selected {
+  background-color: var(--feedback-btn-bg);
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+.feedback-buttons {
+  display: flex;
+  gap: var(--gap);
+  margin-top: 15px;
+}
+.feedback-btn.submit {
+  background-color: var(--feedback-btn-submit-bg);
+  color: #fff;
+}
+.feedback-btn.cancel {
+  background-color: var(--feedback-btn-cancel-bg);
+  color: #fff;
+}
+.feedback-btn {
+  flex-grow: 1;
+  min-height: 45px;
+  font-size: 1rem;
 }
 
 /* Responsividade para Mobile */
@@ -514,15 +691,37 @@ body {
   .group-title {
     font-size: 0.6rem;
   }
-
-  /* Team config modal mobile */
-  .team-config-modal {
+/* Modais em Mobile */
+  .modal-content {
     width: 95%;
     max-height: 85vh;
   }
+  .team-config-modal, .beta-access-modal, .feedback-modal {
+    max-width: 95%;
+    max-height: 85vh;
+  }
 
-  .config-buttons {
+  .config-buttons, .beta-buttons, .feedback-buttons {
     flex-direction: column;
+  }
+  .config-btn, .beta-btn, .feedback-btn {
+    width: 100%;
+  }
+
+  .team-input-group label, .input-group label {
+    font-size: 0.9rem;
+  }
+  .team-input, .beta-input, .modal-input, .modal-select, .modal-textarea {
+    padding: 10px;
+    font-size: 0.9rem;
+  }
+  .input-hint {
+    font-size: 0.7rem;
+  }
+  .rating-btn {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+    min-width: unset;
   }
 }
 
@@ -536,18 +735,8 @@ body {
     min-height: 30px;
   }
   
-  .modal-content {
-    width: 95%;
-    max-height: 85vh;
-  }
-  
   .stats-export-options {
     flex-direction: column;
-  }
-
-  .team-input {
-    padding: 10px;
-    font-size: 0.9rem;
   }
 }
 
@@ -566,5 +755,19 @@ body {
   }
   .score-display {
     font-size: 1.3rem;
+  }
+  .modal-content {
+    width: 80%;
+    max-height: 95vh; /* Mais altura disponível em paisagem */
+  }
+  .team-config-modal, .beta-access-modal, .feedback-modal {
+    max-width: 600px; /* Maior largura para melhor aproveitamento */
+    max-height: 95vh;
+  }
+  .config-buttons, .beta-buttons, .feedback-buttons {
+    flex-direction: row; /* Volta para linha se tiver espaço */
+  }
+  .config-btn, .beta-btn, .feedback-btn {
+    width: unset; /* Permite que o flex-grow distribua */
   }
 }

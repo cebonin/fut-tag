@@ -1,5 +1,5 @@
 // ***** MUDE ESTE NÚMERO PARA UM VALOR MAIOR A CADA NOVA PUBLICAÇÃO! *****
-const CACHE_VERSION = 42; // << VERSÃO ATUALIZADA PARA FUTTAG PRO v3.2 (após atualização do app.js e styles.css)
+const CACHE_VERSION = 48; // << VERSÃO ATUALIZADA PARA FUTTAG PRO v3.2 (após atualização do app.js e styles.css)
 // **********************************************************************
 const CACHE_NAME = `futtag-pro-cache-v${CACHE_VERSION}`;
 

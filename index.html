@@ -378,21 +378,21 @@
     </div>
   </div>
 
-  <!-- Modal de Acesso Beta -->
+  <!-- Modal de Acesso Beta - v3.2.5 -->
 <div id="betaAccessModal" class="modal">
     <div class="modal-content beta-access-modal">
         <h2>🔐 Acesso Beta - FutTag Pro v3.2</h2>
         
         <form class="beta-access-form" onsubmit="event.preventDefault(); validateBetaAccess();">
             <div class="input-group">
-                <label for="betaUser">Usuário:</label>
-                <input type="text" id="betaUser" class="beta-input" placeholder="Ex: BONIN2025" maxlength="20" required>
+                <label for="betaUser">👤 Usuário:</label>
+                <input type="text" id="betaUser" class="beta-input" placeholder="Ex: BONIN2025" maxlength="20" required autocomplete="off">
                 <span class="input-hint">Digite seu usuário de acesso exclusivo</span>
             </div>
             
             <div class="input-group">
-                <label for="betaCode">Código de Acesso:</label>
-                <input type="password" id="betaCode" class="beta-input" placeholder="Digite seu código" maxlength="20" required>
+                <label for="betaCode">🔑 Código de Acesso:</label>
+                <input type="password" id="betaCode" class="beta-input" placeholder="Digite seu código" maxlength="20" required autocomplete="off">
                 <span class="input-hint">Digite o código correspondente ao usuário</span>
             </div>
             
@@ -407,7 +407,7 @@
             
             <div class="beta-buttons">
                 <button type="submit" id="validateBeta" class="btn beta-btn validate">
-                    �� Validar Acesso
+                    🔓 Validar Acesso
                 </button>
             </div>
         </form>

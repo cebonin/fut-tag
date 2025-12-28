@@ -1,4 +1,26 @@
-// ***** FUTTAG PRO v3.2 BETA - SISTEMA DE ANÁLISE ESPORTIVA EM TEMPO REAL *****
+// ✅ DEBUG - TESTE DE VALIDAÇÃO
+console.log('🔧 DEBUG MODE ATIVADO - FutTag v3.2.5');
+console.log('📋 Usuários válidos:', {
+    'BONIN2025': 'futpro123',
+    'ANALYST01': 'scout2025',
+    'BETA2025': 'test2025'
+});
+
+// Função para testar validação
+window.debugLogin = function() {
+    console.log('🧪 Testando validação...');
+    const userField = document.getElementById('betaUser');
+    const codeField = document.getElementById('betaCode');
+    
+    if (userField && codeField) {
+        userField.value = 'BONIN2025';
+        codeField.value = 'futpro123';
+        console.log('✅ Campos preenchidos automaticamente');
+        validateBetaAccess();
+    } else {
+        console.log('❌ Campos não encontrados:', { userField, codeField });
+    }
+};// ***** FUTTAG PRO v3.2 BETA - SISTEMA DE ANÁLISE ESPORTIVA EM TEMPO REAL *****
 // Desenvolvido por Carlos Bonin
 // Data: Dezembro 2024
 // Email: carlosmattes96@gmail.com | WhatsApp: (47) 9 9153-0653

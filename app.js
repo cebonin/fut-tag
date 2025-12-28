@@ -6,8 +6,8 @@
 // ***** CONFIGURAÇÃO DE PROTEÇÃO BETA *****
 const BETA_CONFIG = {
     enabled: true,
-    expirationDate: '2026-03-31', // ✅ CORRIGIDO: 2026
-    users: { // ✅ NOVO: Sistema de usuários
+    expirationDate: '2026-03-31',
+    users: {
         'BONIN2025': 'futpro123',
         'ANALYST01': 'scout2025',
         'ANALYST02': 'data2025',
@@ -73,11 +73,11 @@ function checkBetaAccess() {
         return false;
     }
     
-    // Verificar se usuário já validado
-    const validatedUser = localStorage.getItem('futtag_beta_user');
-    const validatedCode = localStorage.getItem('futtag_beta_code');
+    // ✅ CORRIGIDO: Verificar se usuário já validado corretamente
+    const savedCode = localStorage.getItem('futtag_beta_code');
+    const savedPassword = localStorage.getItem('futtag_beta_password');
     
-    if (validatedUser && validatedCode && BETA_CONFIG.users[validatedCode] === validatedUser) {
+    if (savedCode && savedPassword && BETA_CONFIG.users[savedCode] === savedPassword) {
         return true;
     }
     
@@ -87,40 +87,79 @@ function checkBetaAccess() {
 function showBetaAccessModal() {
     const modal = document.getElementById('betaAccessModal');
     modal.style.display = 'block';
+    
+    // ✅ Focar no primeiro campo
+    setTimeout(() => {
+        const codeInput = document.getElementById('betaCode');
+        if (codeInput) codeInput.focus();
+    }, 300);
 }
 
 function validateBetaAccess() {
-    const userInput = document.getElementById('betaUser').value.trim();
-    const codeInput = document.getElementById('betaCode').value.trim().toUpperCase();
+    const codeInput = document.getElementById('betaCode');
+    const passwordInput = document.getElementById('betaPassword');
     
-    // ✅ CORRIGIDO: Validação usuário + código
-    if (!userInput) {
-        alert('❌ Digite seu nome/email');
+    if (!codeInput || !passwordInput) {
+        alert('❌ Erro: Campos de acesso não encontrados');
         return;
     }
     
-    if (!codeInput) {
+    const code = codeInput.value.trim().toUpperCase();
+    const password = passwordInput.value.trim();
+    
+    // ✅ CORRIGIDO: Validação clara
+    if (!code) {
         alert('❌ Digite o código de acesso');
+        codeInput.focus();
         return;
     }
     
-    if (!BETA_CONFIG.users[codeInput]) {
+    if (!password) {
+        alert('❌ Digite a senha');
+        passwordInput.focus();
+        return;
+    }
+    
+    // ✅ CORRIGIDO: Verificar se código existe
+    if (!BETA_CONFIG.users.hasOwnProperty(code)) {
         alert('❌ Código de acesso inválido');
+        codeInput.focus();
+        codeInput.select();
         return;
     }
     
-    if (BETA_CONFIG.users[codeInput] !== userInput) {
-        alert('❌ Usuário não autorizado para este código');
+    // ✅ CORRIGIDO: Verificar se senha está correta
+    if (BETA_CONFIG.users[code] !== password) {
+        alert('❌ Senha incorreta para este código');
+        passwordInput.focus();
+        passwordInput.select();
         return;
     }
     
-    // Salvar validação
-    localStorage.setItem('futtag_beta_user', userInput);
-    localStorage.setItem('futtag_beta_code', codeInput);
+    // ✅ CORRIGIDO: Salvar dados para próximos acessos
+    localStorage.setItem('futtag_beta_code', code);
+    localStorage.setItem('futtag_beta_password', password);
+    localStorage.setItem('futtag_beta_validated_at', new Date().toISOString());
     
     // Fechar modal e inicializar
     document.getElementById('betaAccessModal').style.display = 'none';
+    
+    // Limpar campos
+    codeInput.value = '';
+    passwordInput.value = '';
+    
+    // Feedback de sucesso
+    alert('✅ Acesso liberado!\n\nBem-vindo ao FutTag Pro v3.2 Beta');
+    
     initializeApp();
+}
+
+// ✅ NOVO: Função para logout/limpar acesso
+function clearBetaAccess() {
+    localStorage.removeItem('futtag_beta_code');
+    localStorage.removeItem('futtag_beta_password');
+    localStorage.removeItem('futtag_beta_validated_at');
+    location.reload();
 }
 
 // ***** INICIALIZAÇÃO DO APLICATIVO *****
@@ -132,6 +171,12 @@ function initializeApp() {
     
     analytics.sessionsCount++;
     localStorage.setItem('futtag_sessions', analytics.sessionsCount.toString());
+    
+    // ✅ Mostrar informação do usuário logado
+    const savedCode = localStorage.getItem('futtag_beta_code');
+    if (savedCode) {
+        console.log('🔐 Usuário logado:', savedCode);
+    }
 }
 
 function setupEventListeners() {
@@ -146,7 +191,7 @@ function setupEventListeners() {
     document.getElementById('statsBtn').addEventListener('click', showStatsModal);
     document.getElementById('configBtn').addEventListener('click', showTeamConfig);
     document.getElementById('exportBtn').addEventListener('click', exportToXML);
-    document.getElementById('feedbackBtn').addEventListener('click', showFeedbackModal); // ✅ CORRIGIDO: Movido para bottom bar
+    document.getElementById('feedbackBtn').addEventListener('click', showFeedbackModal);
 
     // Event listeners para botões de eventos
     setupEventButtons();
@@ -158,22 +203,34 @@ function setupEventListeners() {
 function setupEventButtons() {
     // Finalizações
     ['fin-e-home', 'fin-c-home', 'fin-d-home', 'fin-e-away', 'fin-c-away', 'fin-d-away'].forEach(id => {
-        document.getElementById(id).addEventListener('click', (e) => handleEvent(e.target));
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('click', (e) => handleEvent(e.target));
+        }
     });
     
     // Entradas no último terço
     ['ent-e-home', 'ent-c-home', 'ent-d-home', 'ent-e-away', 'ent-c-away', 'ent-d-away'].forEach(id => {
-        document.getElementById(id).addEventListener('click', (e) => handleEvent(e.target));
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('click', (e) => handleEvent(e.target));
+        }
     });
     
     // Gols
     ['gol-home', 'gol-away'].forEach(id => {
-        document.getElementById(id).addEventListener('click', (e) => handleEvent(e.target));
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('click', (e) => handleEvent(e.target));
+        }
     });
     
-    // ✅ CORRIGIDO: Escanteios e faltas sem OF/DEF
+    // ✅ Escanteios e faltas
     ['esc-home', 'esc-away', 'falta-home', 'falta-away'].forEach(id => {
-        document.getElementById(id).addEventListener('click', (e) => handleEvent(e.target));
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('click', (e) => handleEvent(e.target));
+        }
     });
 }
 
@@ -185,23 +242,56 @@ function setupModalListeners() {
         });
     });
     
-    // Configuração de times
-    document.getElementById('saveTeamConfig').addEventListener('click', saveTeamConfig);
-    document.getElementById('resetTeamConfig').addEventListener('click', resetTeamConfig);
+    // ✅ CORRIGIDO: Event listeners para beta access
+    const validateBtn = document.getElementById('validateBeta');
+    if (validateBtn) {
+        validateBtn.addEventListener('click', validateBetaAccess);
+    }
     
-    // Beta access
-    document.getElementById('validateBeta').addEventListener('click', validateBetaAccess);
+    // ✅ Permitir Enter para validar
+    const betaCode = document.getElementById('betaCode');
+    const betaPassword = document.getElementById('betaPassword');
+    
+    if (betaCode) {
+        betaCode.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                if (betaPassword) betaPassword.focus();
+            }
+        });
+    }
+    
+    if (betaPassword) {
+        betaPassword.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                validateBetaAccess();
+            }
+        });
+    }
+    
+    // Configuração de times
+    const saveTeamBtn = document.getElementById('saveTeamConfig');
+    const resetTeamBtn = document.getElementById('resetTeamConfig');
+    if (saveTeamBtn) saveTeamBtn.addEventListener('click', saveTeamConfig);
+    if (resetTeamBtn) resetTeamBtn.addEventListener('click', resetTeamConfig);
     
     // Feedback
-    document.getElementById('submitFeedback').addEventListener('click', submitFeedback);
-    document.getElementById('cancelFeedback').addEventListener('click', () => {
-        document.getElementById('feedbackModal').style.display = 'none';
-    });
+    const submitFeedbackBtn = document.getElementById('submitFeedback');
+    const cancelFeedbackBtn = document.getElementById('cancelFeedback');
+    if (submitFeedbackBtn) submitFeedbackBtn.addEventListener('click', submitFeedback);
+    if (cancelFeedbackBtn) {
+        cancelFeedbackBtn.addEventListener('click', () => {
+            document.getElementById('feedbackModal').style.display = 'none';
+        });
+    }
 
     // Estatísticas
-    document.getElementById('prevStatsPage').addEventListener('click', prevStatsPage);
-    document.getElementById('nextStatsPage').addEventListener('click', nextStatsPage);
-    document.getElementById('generatePDF').addEventListener('click', generatePDF);
+    const prevStatsBtn = document.getElementById('prevStatsPage');
+    const nextStatsBtn = document.getElementById('nextStatsPage');
+    const generatePDFBtn = document.getElementById('generatePDF');
+    
+    if (prevStatsBtn) prevStatsBtn.addEventListener('click', prevStatsPage);
+    if (nextStatsBtn) nextStatsBtn.addEventListener('click', nextStatsPage);
+    if (generatePDFBtn) generatePDFBtn.addEventListener('click', generatePDF);
 }
 
 // ***** FUNÇÕES DO TIMER *****
@@ -276,7 +366,7 @@ function handleEvent(button) {
         gameData.stats[event.team][`ent_${event.zone}`]++;
     } else if (event.type === 'esc') {
         gameData.stats[event.team].esc++;
-    } else if (event.type === 'falta') { // ✅ CORRIGIDO: nome atualizado
+    } else if (event.type === 'falta') {
         gameData.stats[event.team].falta++;
     }
     
@@ -453,7 +543,6 @@ function resetTeamConfig() {
 }
 
 // ***** SISTEMA DE FEEDBACK ***** 
-// ✅ CORRIGIDO: Movido para bottom bar, feedback visual nas estrelas
 let selectedRating = 0;
 
 function showFeedbackModal() {
@@ -493,6 +582,7 @@ function submitFeedback() {
         comments,
         timestamp: new Date().toISOString(),
         version: 'v3.2',
+        betaUser: localStorage.getItem('futtag_beta_code'),
         userAgent: navigator.userAgent,
         sessionData: {
             sessions: analytics.sessionsCount,
@@ -524,15 +614,22 @@ function updateStatsDisplay() {
     const awayStats = gameData.stats.away;
     
     // Update page indicator
-    document.getElementById('statsPageIndicator').textContent = `${currentStatsPage}/${TOTAL_STATS_PAGES}`;
+    const pageIndicator = document.getElementById('statsPageIndicator');
+    if (pageIndicator) {
+        pageIndicator.textContent = `${currentStatsPage}/${TOTAL_STATS_PAGES}`;
+    }
     
     // Update navigation buttons
-    document.getElementById('prevStatsPage').disabled = currentStatsPage === 1;
-    document.getElementById('nextStatsPage').disabled = currentStatsPage === TOTAL_STATS_PAGES;
+    const prevBtn = document.getElementById('prevStatsPage');
+    const nextBtn = document.getElementById('nextStatsPage');
+    if (prevBtn) prevBtn.disabled = currentStatsPage === 1;
+    if (nextBtn) nextBtn.disabled = currentStatsPage === TOTAL_STATS_PAGES;
     
     // Clear existing charts
     const chartsContainer = document.getElementById('statsCharts');
-    chartsContainer.innerHTML = '';
+    if (chartsContainer) {
+        chartsContainer.innerHTML = '';
+    }
     
     // Clear chart instances
     Object.values(chartInstances).forEach(chart => chart.destroy());
@@ -810,12 +907,6 @@ function createHeatmapShotsChart() {
     const homeStats = gameData.stats.home;
     const awayStats = gameData.stats.away;
     
-    // Simulated heatmap data for shots
-    const heatmapData = [
-        [homeStats.fin_e, homeStats.fin_c, homeStats.fin_d],
-        [awayStats.fin_e, awayStats.fin_c, awayStats.fin_d]
-    ];
-    
     chartInstances.heatmapShots = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -971,7 +1062,7 @@ function createEventsChart() {
     chartInstances.events = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['Gols', 'Escanteios', 'Faltas Ofensivas'], // ✅ CORRIGIDO: "Faltas Ofensivas"
+            labels: ['Gols', 'Escanteios', 'Faltas Ofensivas'],
             datasets: [
                 {
                     label: gameData.homeTeam,
@@ -1109,7 +1200,7 @@ function createEfficiencyChart() {
     chartInstances.efficiency = new Chart(ctx, {
         type: 'radar',
         data: {
-            labels: ['Eficiência %', 'Total Finalizações', 'Gols', 'Escanteios', 'Faltas Ofensivas'], // ✅ CORRIGIDO: "Faltas Ofensivas"
+            labels: ['Eficiência %', 'Total Finalizações', 'Gols', 'Escanteios', 'Faltas Ofensivas'],
             datasets: [
                 {
                     label: gameData.homeTeam,
@@ -1169,11 +1260,11 @@ function generatePDF() {
     doc.setFont('helvetica', 'bold');
     doc.text('FUTTAG PRO v3.2 BETA - RELATÓRIO DE ANÁLISE', 20, 20);
     
-    // ✅ Informações de proteção beta
+    // Informações de proteção beta
     doc.setFontSize(8);
     doc.setFont('helvetica', 'italic');
     doc.text('Desenvolvido por Carlos Bonin - Juega10 | carlos@juega10.com.br', 20, 28);
-    doc.text('Versão Beta - Uso restrito | Expiração: 31/03/2026', 20, 32); // ✅ CORRIGIDO: 2026
+    doc.text('Versão Beta - Uso restrito | Expiração: 31/03/2026', 20, 32);
     
     // Informações da partida
     doc.setFontSize(12);
@@ -1182,7 +1273,8 @@ function generatePDF() {
         `Data/Hora: ${new Date().toLocaleString('pt-BR')}`,
         `Partida: ${gameData.homeTeam} ${gameData.homeScore} × ${gameData.awayScore} ${gameData.awayTeam}`,
         `Duração: ${formatTime(gameData.elapsedTime)} (${gameData.currentHalf}°T)`,
-        `Total de Eventos: ${gameData.events.length}`
+        `Total de Eventos: ${gameData.events.length}`,
+        `Usuário: ${localStorage.getItem('futtag_beta_code') || 'N/A'}`
     ];
     
     let yPos = 45;
@@ -1214,7 +1306,7 @@ function generatePDF() {
         ['Entradas Centro', homeStats.ent_c, awayStats.ent_c],
         ['Entradas Direita', homeStats.ent_d, awayStats.ent_d],
         ['Escanteios', homeStats.esc, awayStats.esc],
-        ['Faltas Ofensivas', homeStats.falta, awayStats.falta] // ✅ CORRIGIDO: "Faltas Ofensivas"
+        ['Faltas Ofensivas', homeStats.falta, awayStats.falta]
     ];
     
     // Tabela de estatísticas
@@ -1259,7 +1351,7 @@ function generatePDF() {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     
-    gameData.events.slice(-15).forEach(event => { // Últimos 15 eventos
+    gameData.events.slice(-15).forEach(event => {
         const eventText = `${event.formattedTime} - ${event.team === 'home' ? gameData.homeTeam : gameData.awayTeam} - ${event.type.toUpperCase()}${event.zone ? ` (${event.zone.toUpperCase()})` : ''}`;
         
         if (yPos > 280) {
@@ -1305,6 +1397,7 @@ function exportToXML() {
         <developer>Carlos Bonin - Juega10</developer>
         <contact>carlos@juega10.com.br</contact>
         <expiration>2026-03-31</expiration>
+        <beta_user>${localStorage.getItem('futtag_beta_code') || 'N/A'}</beta_user>
     </metadata>
     <game_info>
         <home_team>${gameData.homeTeam}</home_team>
@@ -1347,7 +1440,7 @@ function exportToXML() {
             <team_name>${gameData.awayTeam}</team_name>
             <goals>${gameData.stats.away.gols}</goals>
             <shots_left>${gameData.stats.away.fin_e}</shots_left>
-            <shots_center>${gameData.stats.away.fin_c}</shots_center>
+                        <shots_center>${gameData.stats.away.fin_c}</shots_center>
             <shots_right>${gameData.stats.away.fin_d}</shots_right>
             <entries_left>${gameData.stats.away.ent_e}</entries_left>
             <entries_center>${gameData.stats.away.ent_c}</entries_center>

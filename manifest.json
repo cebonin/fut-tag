@@ -1,7 +1,7 @@
 {
   "name": "FutTag Pro",
   "short_name": "FutTag",
-  "description": "Sistema de análise esportiva em tempo real",
+  "description": "Sistema profissional de análise esportiva em tempo real",
   "version": "3.2",
   "start_url": "./",
   "scope": "./",

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'futtag-cache-v3.2.5'; // ✅ VERSÃO MAIOR
+const CACHE_NAME = 'futtag-cache-v3.2.6';
 const urlsToCache = [
     './',
     './index.html',
@@ -12,15 +12,15 @@ const urlsToCache = [
 
 // Forçar atualização do cache
 self.addEventListener('install', event => {
-    console.log('🔄 Service Worker instalando versão v3.2.5...');
+    console.log('🔄 Service Worker instalando versão v3.2.6...');
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
-                console.log('📦 Cache aberto v3.2.5');
+                console.log('📦 Cache aberto v3.2.6');
                 return cache.addAll(urlsToCache);
             })
     );
-    self.skipWaiting(); // ✅ FORÇA ATIVAÇÃO IMEDIATA
+    self.skipWaiting();
 });
 
 // Limpar cache antigo
@@ -38,14 +38,13 @@ self.addEventListener('activate', event => {
             );
         })
     );
-    self.clients.claim(); // ✅ ASSUME CONTROLE IMEDIATO
+    self.clients.claim();
 });
 
 // Sempre buscar da rede primeiro para arquivos principais
 self.addEventListener('fetch', event => {
     const url = event.request.url;
     
-    // Para arquivos principais, sempre buscar da rede primeiro
     if (url.includes('app.js') || url.includes('index.html') || url.includes('style.css')) {
         event.respondWith(
             fetch(event.request)
@@ -58,7 +57,6 @@ self.addEventListener('fetch', event => {
                 .catch(() => caches.match(event.request))
         );
     } else {
-        // Para outros arquivos, usar cache primeiro
         event.respondWith(
             caches.match(event.request)
                 .then(response => response || fetch(event.request))

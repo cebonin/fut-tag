@@ -1,431 +1,332 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>FutTag Pro - Beta 2025</title>
-
-  <!-- PWA Metadata -->
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#1a1a2e">
-  <link rel="apple-touch-icon" href="./icons/icon-180.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
-  <link rel="apple-touch-icon" sizes="192x192" href="./icons/icon-192.png">
-  <link rel="apple-touch-icon" sizes="512x512" href="./icons/icon-512.png">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="FutTag">
-
-  <link rel="stylesheet" href="./styles.css" />
-  <!-- Chart.js para os gráficos -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <!-- Chart.js Plugin Datalabels para rótulos otimizados -->
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-  <!-- jsPDF para gerar PDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <!-- html2canvas para converter canvas em imagem -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FutTag Pro v3.2</title>
+    <meta name="description" content="Sistema profissional de análise esportiva em tempo real">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a2e">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="./icons/icon-180.png">
+    <link rel="apple-touch-icon" href="./icons/icon-180.png">
 </head>
 <body>
-  <div class="app-container">
-    <!-- Cabeçalho Principal: Tempo de Jogo, Placar e Cronômetro -->
-    <header class="game-header">
-      <div class="half-controls">
-        <button class="btn half-btn" data-half="1" data-action="start">INÍCIO 1°T</button>
-        <button class="btn half-btn" data-half="1" data-action="end">FINAL 1°T</button>
-        <button class="btn half-btn" data-half="2" data-action="start">INÍCIO 2°T</button>
-        <button class="btn half-btn" data-half="2" data-action="end">FINAL 2°T</button>
-      </div>
-      <div class="game-info">
-        <span class="current-half-display" id="currentHalfDisplay">1°T</span>
-        <span class="score-display">
-          <span id="homeScore">0</span> - <span id="awayScore">0</span>
-        </span>
-        <span class="timer-display" id="timerDisplay">00:00</span>
-      </div>
-    </header>
-
-    <main class="main-layout">
-      <!-- Coluna Time Casa -->
-      <section class="team-column home">
-        <h2 class="team-name" id="homeTeamName">CASA</h2>
-
-        <!-- Finalizações Casa -->
-        <div class="action-group">
-          <h3 class="group-title">Finalizações</h3>
-          <div class="field-grid">
-            <button class="btn event-btn field-zone-btn zone-esq" data-code="FIN_HOME_ESQ">
-              <span class="btn-text-full">Esquerda</span>
-              <span class="btn-text-short">E</span>
-              <span class="count-badge" data-counter="FIN_HOME_ESQ">0</span>
-            </button>
-            <button class="btn event-btn field-zone-btn zone-ctr" data-code="FIN_HOME_CTR">
-              <span class="btn-text-full">Centro</span>
-              <span class="btn-text-short">C</span>
-              <span class="count-badge" data-counter="FIN_HOME_CTR">0</span>
-            </button>
-            <button class="btn event-btn field-zone-btn zone-dir" data-code="FIN_HOME_DIR">
-              <span class="btn-text-full">Direita</span>
-              <span class="btn-text-short">D</span>
-              <span class="count-badge" data-counter="FIN_HOME_DIR">0</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Entradas no Último Terço Casa -->
-        <div class="action-group">
-          <h3 class="group-title">Entradas Último Terço</h3>
-          <div class="field-grid">
-            <button class="btn event-btn field-zone-btn zone-esq" data-code="ENT_HOME_ESQ">
-              <span class="btn-text-full">Esquerda</span>
-              <span class="btn-text-short">E</span>
-              <span class="count-badge" data-counter="ENT_HOME_ESQ">0</span>
-            </button>
-            <button class="btn event-btn field-zone-btn zone-ctr" data-code="ENT_HOME_CTR">
-              <span class="btn-text-full">Centro</span>
-              <span class="btn-text-short">C</span>
-              <span class="count-badge" data-counter="ENT_HOME_CTR">0</span>
-            </button>
-            <button class="btn event-btn field-zone-btn zone-dir" data-code="ENT_HOME_DIR">
-              <span class="btn-text-full">Direita</span>
-              <span class="btn-text-short">D</span>
-              <span class="count-badge" data-counter="ENT_HOME_DIR">0</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Segunda Coluna Casa -->
-        <div class="second-column">
-          <!-- GOL Casa -->
-          <div class="action-group gol-group">
-            <button class="btn event-btn gol-btn" data-code="GOL_HOME">
-              <span class="btn-text-full">GOL</span>
-              <span class="btn-text-short">GOL</span>
-              <span class="count-badge" data-counter="GOL_HOME">0</span>
-            </button>
-          </div>
-
-          <!-- ESC OF / FALTA OF Casa -->
-          <div class="action-group side-actions-group">
-            <button class="btn event-btn side-btn esc-of" data-code="ESC_OF_HOME">
-              <span class="btn-text-full">ESC OF</span>
-              <span class="btn-text-short">ESC</span>
-              <span class="count-badge" data-counter="ESC_OF_HOME">0</span>
-            </button>
-            <button class="btn event-btn side-btn falta-of" data-code="FALTA_OF_HOME">
-              <span class="btn-text-full">FL OF</span>
-              <span class="btn-text-short">FL</span>
-              <span class="count-badge" data-counter="FALTA_OF_HOME">0</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Coluna Time Visitante -->
-      <section class="team-column away">
-        <h2 class="team-name" id="awayTeamName">VISITANTE</h2>
-
-        <!-- Finalizações Visitante -->
-        <div class="action-group">
-          <h3 class="group-title">Finalizações</h3>
-          <div class="field-grid">
-            <button class="btn event-btn field-zone-btn zone-esq" data-code="FIN_AWAY_ESQ">
-              <span class="btn-text-full">Esquerda</span>
-              <span class="btn-text-short">E</span>
-              <span class="count-badge" data-counter="FIN_AWAY_ESQ">0</span>
-            </button>
-            <button class="btn event-btn field-zone-btn zone-ctr" data-code="FIN_AWAY_CTR">
-              <span class="btn-text-full">Centro</span>
-              <span class="btn-text-short">C</span>
-              <span class="count-badge" data-counter="FIN_AWAY_CTR">0</span>
-            </button>
-            <button class="btn event-btn field-zone-btn zone-dir" data-code="FIN_AWAY_DIR">
-              <span class="btn-text-full">Direita</span>
-              <span class="btn-text-short">D</span>
-              <span class="count-badge" data-counter="FIN_AWAY_DIR">0</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Entradas no Último Terço Visitante -->
-        <div class="action-group">
-          <h3 class="group-title">Entradas Último Terço</h3>
-          <div class="field-grid">
-            <button class="btn event-btn field-zone-btn zone-esq" data-code="ENT_AWAY_ESQ">
-              <span class="btn-text-full">Esquerda</span>
-              <span class="btn-text-short">E</span>
-              <span class="count-badge" data-counter="ENT_AWAY_ESQ">0</span>
-            </button>
-            <button class="btn event-btn field-zone-btn zone-ctr" data-code="ENT_AWAY_CTR">
-              <span class="btn-text-full">Centro</span>
-              <span class="btn-text-short">C</span>
-              <span class="count-badge" data-counter="ENT_AWAY_CTR">0</span>
-            </button>
-            <button class="btn event-btn field-zone-btn zone-dir" data-code="ENT_AWAY_DIR">
-              <span class="btn-text-full">Direita</span>
-              <span class="btn-text-short">D</span>
-              <span class="count-badge" data-counter="ENT_AWAY_DIR">0</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Segunda Coluna Visitante -->
-        <div class="second-column">
-          <!-- GOL Visitante -->
-          <div class="action-group gol-group">
-            <button class="btn event-btn gol-btn" data-code="GOL_AWAY">
-              <span class="btn-text-full">GOL</span>
-              <span class="btn-text-short">GOL</span>
-              <span class="count-badge" data-counter="GOL_AWAY">0</span>
-            </button>
-          </div>
-
-          <!-- ESC DEF / FALTA DEF Visitante -->
-          <div class="action-group side-actions-group">
-            <button class="btn event-btn side-btn esc-def" data-code="ESC_DEF_AWAY">
-              <span class="btn-text-full">ESC DEF</span>
-              <span class="btn-text-short">ESC</span>
-              <span class="count-badge" data-counter="ESC_DEF_AWAY">0</span>
-            </button>
-            <button class="btn event-btn side-btn falta-def" data-code="FALTA_DEF_AWAY">
-              <span class="btn-text-full">FL DEF</span>
-              <span class="btn-text-short">FL</span>
-              <span class="count-badge" data-counter="FALTA_DEF_AWAY">0</span>
-            </button>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <!-- Barra inferior: Cronômetro e Controles -->
-    <footer class="bottom-bar">
-      <div class="bottom-buttons">
-        <button id="btnUndo" class="btn action-btn undo">
-          <span class="btn-text-full">Desfazer</span>
-          <span class="btn-text-short">Undo</span>
-        </button>
-        <button id="btnToggleTimer" class="btn action-btn primary">Iniciar</button>
-        <button id="btnTeamConfig" class="btn action-btn config">
-          <span class="btn-text-full">Equipes</span>
-          <span class="btn-text-short">⚙️</span>
-        </button>
-        <button id="btnResetAll" class="btn action-btn reset">
-          <span class="btn-text-full">Zerar Tudo</span>
-          <span class="btn-text-short">Reset</span>
-        </button>
-        <button id="btnShowStats" class="btn action-btn stats">
-          <span class="btn-text-full">Estatísticas</span>
-          <span class="btn-text-short">Stats</span>
-        </button>
-      </div>
-    </footer>
-  </div>
-
-  <!-- Modal de Acesso Beta -->
-<div id="betaAccessModal" class="modal">
-    <div class="modal-content beta-access-modal">
-        <h2>🔐 Acesso Beta - FutTag Pro v3.2</h2>
-        
-        <form class="beta-access-form" onsubmit="event.preventDefault(); validateBetaAccess();">
-            <div class="input-group">
-                <label for="betaCode">Código de Acesso:</label>
-                <input type="text" id="betaCode" class="beta-input" placeholder="Ex: BONIN2025" maxlength="20" required>
-                <span class="input-hint">Digite seu código de acesso exclusivo</span>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-container">
+                <img src="./icons/icon-180.png" alt="FutTag Pro" class="logo">
+                <h1 class="app-title">FutTag Pro <span class="version">v3.2</span></h1>
             </div>
+            <div class="game-info">
+                <div class="score-display">0 × 0</div>
+                <div class="timer-display">00:00</div>
+                <div class="current-half-display">1°T</div>
+            </div>
+        </header>
+
+        <!-- Timer Controls -->
+        <section class="timer-controls">
+            <div class="half-controls">
+                <button id="half1Btn" class="half-btn active">1° TEMPO</button>
+                <button id="half2Btn" class="half-btn">2° TEMPO</button>
+            </div>
+            <div class="action-controls">
+                <button id="startBtn" class="action-btn start">INICIAR</button>
+                <button id="undoBtn" class="action-btn undo">DESFAZER</button>
+                <button id="resetBtn" class="action-btn reset">REINICIAR</button>
+            </div>
+        </section>
+
+        <!-- Game Field -->
+        <section class="game-field">
+            <div class="field-container">
+                <!-- Home Team -->
+                <div class="team-column home">
+                    <div class="team-name">CASA</div>
+                    
+                    <div class="event-group">
+                        <div class="group-title">⚽ FINALIZAÇÕES</div>
+                        <button id="fin-e-home" class="event-btn" data-type="fin" data-team="home" data-zone="e">
+                            <span class="btn-text">ESQ</span>
+                        </button>
+                        <button id="fin-c-home" class="event-btn" data-type="fin" data-team="home" data-zone="c">
+                            <span class="btn-text">CENTRO</span>
+                        </button>
+                        <button id="fin-d-home" class="event-btn" data-type="fin" data-team="home" data-zone="d">
+                            <span class="btn-text">DIR</span>
+                        </button>
+                    </div>
+
+                    <div class="event-group">
+                        <div class="group-title">🎯 ÚLTIMO TERÇO</div>
+                        <button id="ent-e-home" class="event-btn" data-type="ent" data-team="home" data-zone="e">
+                            <span class="btn-text">ESQ</span>
+                        </button>
+                        <button id="ent-c-home" class="event-btn" data-type="ent" data-team="home" data-zone="c">
+                            <span class="btn-text">CENTRO</span>
+                        </button>
+                        <button id="ent-d-home" class="event-btn" data-type="ent" data-team="home" data-zone="d">
+                            <span class="btn-text">DIR</span>
+                        </button>
+                    </div>
+
+                    <div class="event-group">
+                        <div class="group-title">📊 EVENTOS</div>
+                        <button id="gol-home" class="event-btn gol" data-type="gol" data-team="home">
+                            <span class="btn-text">GOL</span>
+                        </button>
+                        <button id="esc-home" class="event-btn" data-type="esc" data-team="home">
+                            <span class="btn-text">ESCANTEIO</span>
+                        </button>
+                        <button id="falta-home" class="event-btn" data-type="falta" data-team="home">
+                            <span class="btn-text">FALTA OF.</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Field Center -->
+                <div class="field-center">
+                    <div class="field-graphic">
+                        <div class="field-line"></div>
+                        <div class="center-circle"></div>
+                        <div class="penalty-area left"></div>
+                        <div class="penalty-area right"></div>
+                    </div>
+                </div>
+
+                <!-- Away Team -->
+                <div class="team-column away">
+                    <div class="team-name">VISITANTE</div>
+                    
+                    <div class="event-group">
+                        <div class="group-title">⚽ FINALIZAÇÕES</div>
+                        <button id="fin-e-away" class="event-btn" data-type="fin" data-team="away" data-zone="e">
+                            <span class="btn-text">ESQ</span>
+                        </button>
+                        <button id="fin-c-away" class="event-btn" data-type="fin" data-team="away" data-zone="c">
+                            <span class="btn-text">CENTRO</span>
+                        </button>
+                        <button id="fin-d-away" class="event-btn" data-type="fin" data-team="away" data-zone="d">
+                            <span class="btn-text">DIR</span>
+                        </button>
+                    </div>
+
+                    <div class="event-group">
+                        <div class="group-title">🎯 ÚLTIMO TERÇO</div>
+                        <button id="ent-e-away" class="event-btn" data-type="ent" data-team="away" data-zone="e">
+                            <span class="btn-text">ESQ</span>
+                        </button>
+                        <button id="ent-c-away" class="event-btn" data-type="ent" data-team="away" data-zone="c">
+                            <span class="btn-text">CENTRO</span>
+                        </button>
+                        <button id="ent-d-away" class="event-btn" data-type="ent" data-team="away" data-zone="d">
+                            <span class="btn-text">DIR</span>
+                        </button>
+                    </div>
+
+                    <div class="event-group">
+                        <div class="group-title">📊 EVENTOS</div>
+                        <button id="gol-away" class="event-btn gol" data-type="gol" data-team="away">
+                            <span class="btn-text">GOL</span>
+                        </button>
+                        <button id="esc-away" class="event-btn" data-type="esc" data-team="away">
+                            <span class="btn-text">ESCANTEIO</span>
+                        </button>
+                        <button id="falta-away" class="event-btn" data-type="falta" data-team="away">
+                            <span class="btn-text">FALTA OF.</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bottom Controls -->
+        <section class="bottom-controls">
+            <button id="configBtn" class="control-btn">
+                <span class="btn-icon">⚙️</span>
+                <span class="btn-label">CONFIGURAR</span>
+            </button>
+            <button id="statsBtn" class="control-btn">
+                <span class="btn-icon">📊</span>
+                <span class="btn-label">ESTATÍSTICAS</span>
+            </button>
+            <button id="exportBtn" class="control-btn">
+                <span class="btn-icon">📤</span>
+                <span class="btn-label">EXPORTAR</span>
+            </button>
+            <button id="feedbackBtn" class="control-btn">
+                <span class="btn-icon">💬</span>
+                <span class="btn-label">FEEDBACK</span>
+            </button>
+        </section>
+    </div>
+
+    <!-- Modal de Acesso Beta -->
+    <div id="betaAccessModal" class="modal">
+        <div class="modal-content beta-access-modal">
+            <h2>🔐 Acesso Beta - FutTag Pro v3.2</h2>
             
-            <div class="input-group">
-                <label for="betaPassword">Senha:</label>
-                <input type="password" id="betaPassword" class="beta-input" placeholder="Digite sua senha" maxlength="20" required>
-                <span class="input-hint">Digite a senha correspondente ao código</span>
-            </div>
+            <form class="beta-access-form" onsubmit="event.preventDefault(); validateBetaAccess();">
+                <div class="input-group">
+                    <label for="betaUser">👤 Usuário:</label>
+                    <input type="text" id="betaUser" class="beta-input" placeholder="Ex: BONIN2025" maxlength="20" required>
+                    <span class="input-hint">Digite seu usuário de acesso exclusivo</span>
+                </div>
+                
+                <div class="input-group">
+                    <label for="betaCode">🔑 Código de Acesso:</label>
+                    <input type="password" id="betaCode" class="beta-input" placeholder="Digite seu código" maxlength="20" required>
+                    <span class="input-hint">Digite o código correspondente ao usuário</span>
+                </div>
+                
+                <div class="beta-info">
+                    <p><strong>�� Informações da Versão Beta:</strong></p>
+                    <p>• Versão: FutTag Pro v3.2 Beta</p>
+                    <p>• Validade: 31/03/2026</p>
+                    <p>• Desenvolvedor: Carlos Bonin</p>
+                    <p>• Email: carlosmattes96@gmail.com</p>
+                    <p>• WhatsApp: (47) 9 9153-0653</p>
+                </div>
+                
+                <div class="beta-buttons">
+                    <button type="submit" id="validateBeta" class="btn beta-btn validate">
+                        🔓 Validar Acesso
+                    </button>
+                </div>
+            </form>
             
-            <div class="beta-info">
-                <p><strong>📋 Informações da Versão Beta:</strong></p>
-                <p>• Versão: FutTag Pro v3.2 Beta</p>
-                <p>• Validade: 31/03/2026</p>
-                <p>• Desenvolvedor: Carlos Bonin - Juega10</p>
-                <p>• Suporte: carlos@juega10.com.br</p>
+            <div class="beta-footer">
+                <p><strong>Acesso Restrito:</strong> Esta versão é exclusiva para testadores autorizados.</p>
+                <p>Em caso de problemas, contate: <strong>carlosmattes96@gmail.com</strong></p>
             </div>
-            
-            <div class="beta-buttons">
-                <button type="submit" id="validateBeta" class="btn beta-btn validate">
-                    🔓 Validar Acesso
-                </button>
-            </div>
-        </form>
-        
-        <div class="beta-footer">
-            <p><strong>Acesso Restrito:</strong> Esta versão é exclusiva para testadores autorizados.</p>
-            <p>Em caso de problemas, contate: <strong>carlos@juega10.com.br</strong></p>
         </div>
     </div>
-</div>
 
-  <!-- Modal de Configuração das Equipes -->
-  <div id="teamConfigModal" class="modal">
-    <div class="modal-content team-config-modal">
-      <span class="close-button" id="teamConfigClose">&times;</span>
-      <h2>⚽ Configuração das Equipes</h2>
-      
-      <div class="team-config-form">
-        <div class="team-input-group">
-          <label for="homeTeamInput">🏠 Time da Casa:</label>
-          <input type="text" id="homeTeamInput" class="team-input" placeholder="Ex: Manaus FC" maxlength="15">
-          <small class="input-hint">Máximo 15 caracteres</small>
-        </div>
-        
-        <div class="team-input-group">
-          <label for="awayTeamInput">✈️ Time Visitante:</label>
-          <input type="text" id="awayTeamInput" class="team-input" placeholder="Ex: São Paulo FC" maxlength="15">
-          <small class="input-hint">Máximo 15 caracteres</small>
-        </div>
-        
-        <div class="config-buttons">
-          <button id="btnSaveTeamConfig" class="btn config-btn save">✅ Salvar Configuração</button>
-          <button id="btnResetTeamConfig" class="btn config-btn reset">🔄 Usar Padrão</button>
-        </div>
-        
-        <div class="config-info">
-          <p><strong>💡 Dica:</strong> Os nomes aparecerão na interface do jogo e no relatório PDF.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal de Estatísticas -->
-  <div id="statsModal" class="modal">
-    <div class="modal-content">
-      <span class="close-button">&times;</span>
-      <h2>📊 Estatísticas do Jogo</h2>
-      
-      <!-- Container para gráficos temporários (não visíveis) -->
-      <div id="chartsContainer" style="display: none;">
-        <canvas id="fin1TChart" width="800" height="350"></canvas>
-        <canvas id="fin2TChart" width="800" height="350"></canvas>
-        <canvas id="finTotalChart" width="800" height="350"></canvas>
-        
-        <canvas id="ent1TChart" width="800" height="350"></canvas>
-        <canvas id="ent2TChart" width="800" height="350"></canvas>
-        <canvas id="entTotalChart" width="800" height="350"></canvas>
-        
-        <canvas id="escFalta1TChart" width="800" height="350"></canvas>
-        <canvas id="escFalta2TChart" width="800" height="350"></canvas>
-        <canvas id="escFaltaTotalChart" width="800" height="350"></canvas>
-      </div>
-
-      <div class="stats-preview">
-        <p>📊 O relatório será gerado com <strong>9 gráficos</strong> organizados em <strong>3 páginas</strong>.</p>
-        <ul class="stats-summary">
-          <li><strong>Finalizações:</strong> <span id="finSummary">-</span></li>
-          <li><strong>Entradas no Último Terço:</strong> <span id="entSummary">-</span></li>
-          <li><strong>Escanteios:</strong> <span id="escSummary">-</span></li>
-          <li><strong>Faltas Laterais:</strong> <span id="faltaSummary">-</span></li>
-        </ul>
-      </div>
-      
-      <div class="stats-export-options">
-        <button id="btnGeneratePDF" class="btn action-btn export">📄 Gerar Relatório PDF</button>
-        <button id="btnExportXML" class="btn action-btn export">📁 Exportar XML</button>
-        <button id="btnSendFeedback" class="btn action-btn feedback">💬 Enviar Feedback</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal de Feedback -->
-  <div id="feedbackModal" class="modal">
-    <div class="modal-content feedback-modal">
-      <span class="close-button" id="feedbackClose">&times;</span>
-      <h2>💬 Feedback - FutTag Pro Beta</h2>
-      
-      <div class="feedback-form">
-        <div class="input-group">
-          <label for="feedbackName">👤 Seu Nome/Clube:</label>
-          <input type="text" id="feedbackName" placeholder="Ex: João Silva - Flamengo" maxlength="50">
-        </div>
-        
-        <div class="input-group">
-          <label for="feedbackType">📋 Tipo de Feedback:</label>
-          <select id="feedbackType">
-            <option value="bug">🐛 Bug/Erro</option>
-            <option value="feature">🚀 Nova Funcionalidade</option>
-            <option value="improvement">⚡ Melhoria</option>
-            <option value="general">💭 Comentário Geral</option>
-          </select>
-        </div>
-        
-        <div class="input-group">
-          <label for="feedbackRating">⭐ Avaliação Geral:</label>
-          <div class="rating-buttons">
-            <button type="button" class="rating-btn" data-rating="1">1⭐</button>
-            <button type="button" class="rating-btn" data-rating="2">2⭐</button>
-            <button type="button" class="rating-btn" data-rating="3">3⭐</button>
-            <button type="button" class="rating-btn" data-rating="4">4⭐</button>
-            <button type="button" class="rating-btn" data-rating="5">5⭐</button>
-          </div>
-        </div>
-        
-        <div class="input-group">
-          <label for="feedbackMessage">💭 Sua Mensagem:</label>
-          <textarea id="feedbackMessage" rows="4" placeholder="Descreva sua experiência, sugestões ou problemas encontrados..." maxlength="500"></textarea>
-          <small class="input-hint">Máximo 500 caracteres</small>
-        </div>
-        
-        <div class="feedback-buttons">
-          <button id="btnSubmitFeedback" class="btn feedback-btn submit">📤 Enviar Feedback</button>
-          <button id="btnCancelFeedback" class="btn feedback-btn cancel">❌ Cancelar</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal de Acesso Beta - v3.2.5 -->
-<div id="betaAccessModal" class="modal">
-    <div class="modal-content beta-access-modal">
-        <h2>🔐 Acesso Beta - FutTag Pro v3.2</h2>
-        
-        <form class="beta-access-form" onsubmit="event.preventDefault(); validateBetaAccess();">
-            <div class="input-group">
-                <label for="betaUser">👤 Usuário:</label>
-                <input type="text" id="betaUser" class="beta-input" placeholder="Ex: BONIN2025" maxlength="20" required autocomplete="off">
-                <span class="input-hint">Digite seu usuário de acesso exclusivo</span>
+    <!-- Modal de Configuração de Times -->
+    <div id="teamConfigModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Configurar Times</h2>
+                <button class="close-button">&times;</button>
             </div>
-            
-            <div class="input-group">
-                <label for="betaCode">🔑 Código de Acesso:</label>
-                <input type="password" id="betaCode" class="beta-input" placeholder="Digite seu código" maxlength="20" required autocomplete="off">
-                <span class="input-hint">Digite o código correspondente ao usuário</span>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label for="homeTeamInput">Time da Casa:</label>
+                    <input type="text" id="homeTeamInput" maxlength="15" placeholder="Nome do time da casa">
+                </div>
+                <div class="input-group">
+                    <label for="awayTeamInput">Time Visitante:</label>
+                    <input type="text" id="awayTeamInput" maxlength="15" placeholder="Nome do time visitante">
+                </div>
             </div>
-            
-            <div class="beta-info">
-                <p><strong>📋 Informações da Versão Beta:</strong></p>
-                <p>• Versão: FutTag Pro v3.2 Beta</p>
-                <p>• Validade: 31/03/2026</p>
-                <p>• Desenvolvedor: Carlos Bonin</p>
-                <p>• Email: carlosmattes96@gmail.com</p>
-                <p>• WhatsApp: (47) 9 9153-0653</p>
+            <div class="modal-footer">
+                <button id="resetTeamConfig" class="btn btn-secondary">Resetar</button>
+                <button id="saveTeamConfig" class="btn btn-primary">Salvar</button>
             </div>
-            
-            <div class="beta-buttons">
-                <button type="submit" id="validateBeta" class="btn beta-btn validate">
-                    🔓 Validar Acesso
-                </button>
-            </div>
-        </form>
-        
-        <div class="beta-footer">
-            <p><strong>Acesso Restrito:</strong> Esta versão é exclusiva para testadores autorizados.</p>
-            <p>Em caso de problemas, contate: <strong>carlosmattes96@gmail.com</strong></p>
         </div>
     </div>
-</div>
 
-  <script src="./app.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js').catch(console.error);
-      });
-    }
-  </script>
+    <!-- Modal de Estatísticas -->
+    <div id="statsModal" class="modal">
+        <div class="modal-content stats-modal">
+            <div class="modal-header">
+                <h2>📊 Estatísticas da Partida</h2>
+                <button class="close-button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="stats-navigation">
+                    <button id="prevStatsPage" class="nav-btn">← Anterior</button>
+                    <span id="statsPageIndicator">1/3</span>
+                    <button id="nextStatsPage" class="nav-btn">Próxima →</button>
+                </div>
+                <div id="statsCharts"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="generatePDF" class="btn btn-primary">📄 Gerar PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Feedback -->
+    <div id="feedbackModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>💬 Feedback Beta</h2>
+                <button class="close-button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="feedbackForm">
+                    <div class="input-group">
+                        <label for="feedbackName">Nome:</label>
+                        <input type="text" id="feedbackName" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="feedbackRole">Função:</label>
+                        <select id="feedbackRole" required>
+                            <option value="">Selecione...</option>
+                            <option value="analista">Analista de Desempenho</option>
+                            <option value="tecnico">Técnico</option>
+                            <option value="preparador">Preparador Físico</option>
+                            <option value="scout">Scout</option>
+                            <option value="dirigente">Dirigente</option>
+                            <option value="jornalista">Jornalista</option>
+                            <option value="outro">Outro</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="feedbackExperience">Experiência com análise esportiva:</label>
+                        <select id="feedbackExperience">
+                            <option value="">Selecione...</option>
+                            <option value="iniciante">Iniciante (0-2 anos)</option>
+                            <option value="intermediario">Intermediário (3-5 anos)</option>
+                            <option value="avancado">Avançado (6+ anos)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Avaliação geral (obrigatório):</label>
+                        <div class="rating-stars">
+                            <button type="button" class="rating-btn" onclick="selectRating(1)">⭐</button>
+                            <button type="button" class="rating-btn" onclick="selectRating(2)">⭐</button>
+                            <button type="button" class="rating-btn" onclick="selectRating(3)">⭐</button>
+                            <button type="button" class="rating-btn" onclick="selectRating(4)">⭐</button>
+                            <button type="button" class="rating-btn" onclick="selectRating(5)">⭐</button>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="feedbackComments">Comentários e sugestões:</label>
+                        <textarea id="feedbackComments" rows="4" placeholder="Compartilhe sua experiência, sugestões de melhoria, bugs encontrados, etc."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelFeedback" class="btn btn-secondary">Cancelar</button>
+                <button id="submitFeedback" class="btn btn-primary">Enviar Feedback</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => console.log('✅ SW registrado'))
+                    .catch(error => console.log('❌ Erro SW:', error));
+            });
+        }
+    </script>
 </body>
 </html>

@@ -1,26 +1,4 @@
-// ✅ DEBUG - TESTE DE VALIDAÇÃO
-console.log('🔧 DEBUG MODE ATIVADO - FutTag v3.2.5');
-console.log('📋 Usuários válidos:', {
-    'BONIN2025': 'futpro123',
-    'ANALYST01': 'scout2025',
-    'BETA2025': 'test2025'
-});
-
-// Função para testar validação
-window.debugLogin = function() {
-    console.log('🧪 Testando validação...');
-    const userField = document.getElementById('betaUser');
-    const codeField = document.getElementById('betaCode');
-    
-    if (userField && codeField) {
-        userField.value = 'BONIN2025';
-        codeField.value = 'futpro123';
-        console.log('✅ Campos preenchidos automaticamente');
-        validateBetaAccess();
-    } else {
-        console.log('❌ Campos não encontrados:', { userField, codeField });
-    }
-};// ***** FUTTAG PRO v3.2 BETA - SISTEMA DE ANÁLISE ESPORTIVA EM TEMPO REAL *****
+// ***** FUTTAG PRO v3.2 BETA - SISTEMA DE ANÁLISE ESPORTIVA EM TEMPO REAL *****
 // Desenvolvido por Carlos Bonin
 // Data: Dezembro 2024
 // Email: carlosmattes96@gmail.com | WhatsApp: (47) 9 9153-0653
@@ -145,12 +123,14 @@ function showBetaAccessModal() {
     }, 300);
 }
 
-// ✅ FUNÇÃO GLOBAL CORRIGIDA para validar acesso
+// ✅ FUNÇÃO GLOBAL para validar acesso
 window.validateBetaAccess = function() {
     console.log('🔐 Iniciando validação de acesso...');
     
     const userInput = document.getElementById('betaUser');
     const codeInput = document.getElementById('betaCode');
+    
+    console.log('🔍 Campos encontrados:', { userInput: !!userInput, codeInput: !!codeInput });
     
     if (!userInput) {
         console.error('❌ Campo betaUser não encontrado!');
@@ -390,12 +370,12 @@ function toggleTimer() {
     if (gameData.timerRunning) {
         gameData.timerRunning = false;
         btn.textContent = 'INICIAR';
-        btn.style.backgroundColor = 'var(--primary-action-bg)';
+        btn.style.background = 'var(--gradient-accent)';
     } else {
         gameData.timerRunning = true;
         gameData.startTime = Date.now() - gameData.elapsedTime;
         btn.textContent = 'PAUSAR';
-        btn.style.backgroundColor = 'var(--undo-action-bg)';
+        btn.style.background = 'linear-gradient(45deg, #9c27b0, #e91e63)';
         updateTimer();
     }
 }
@@ -509,7 +489,7 @@ function resetGame() {
     const startBtn = document.getElementById('startBtn');
     if (startBtn) {
         startBtn.textContent = 'INICIAR';
-        startBtn.style.backgroundColor = 'var(--primary-action-bg)';
+        startBtn.style.background = 'var(--gradient-accent)';
     }
 }
 
@@ -640,7 +620,7 @@ function showFeedbackModal() {
     if (modal) modal.style.display = 'block';
 }
 
-function selectRating(rating) {
+window.selectRating = function(rating) {
     selectedRating = rating;
     document.querySelectorAll('.rating-btn').forEach((btn, index) => {
         if (index < rating) {
@@ -649,7 +629,7 @@ function selectRating(rating) {
             btn.classList.remove('selected');
         }
     });
-}
+};
 
 function submitFeedback() {
     const nameInput = document.getElementById('feedbackName');
@@ -1495,7 +1475,7 @@ function exportToXML() {
             <shots_left>${gameData.stats.home.fin_e}</shots_left>
             <shots_center>${gameData.stats.home.fin_c}</shots_center>
             <shots_right>${gameData.stats.home.fin_d}</shots_right>
-            <entries_left>${gameData.stats.home.ent_e}</entries_left>
+                        <entries_left>${gameData.stats.home.ent_e}</entries_left>
             <entries_center>${gameData.stats.home.ent_c}</entries_center>
             <entries_right>${gameData.stats.home.ent_d}</entries_right>
             <corners>${gameData.stats.home.esc}</corners>
@@ -1532,10 +1512,12 @@ function exportToXML() {
           '⚽ Placar: ' + gameData.homeScore + ' × ' + gameData.awayScore);
 }
 
-// ✅ NOVO: Função para limpar acesso (logout)
+// ✅ FUNÇÃO para limpar acesso (logout)
 window.clearBetaAccess = function() {
     localStorage.removeItem('futtag_beta_user');
     localStorage.removeItem('futtag_beta_code');
     localStorage.removeItem('futtag_beta_validated_at');
     location.reload();
 };
+
+console.log('✅ FutTag Pro v3.2 carregado com sucesso!');
